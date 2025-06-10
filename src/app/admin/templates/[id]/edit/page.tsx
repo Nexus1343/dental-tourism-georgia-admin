@@ -78,7 +78,9 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
-import { QuestionnaireTemplate, QuestionnairePage } from "@/types/database"
+import { QuestionnaireTemplate, QuestionnairePage, QuestionnaireQuestion } from "@/types/database"
+import { QuestionnaireTemplateService, QuestionnairePageService, QuestionnaireQuestionService } from "@/lib/database"
+import { toast } from "sonner"
 import { PageFlowDiagram } from "@/components/ui/page-flow-diagram"
 
 // Page configuration schema
@@ -94,71 +96,7 @@ const pageConfigSchema = z.object({
 
 type PageConfigData = z.infer<typeof pageConfigSchema>
 
-// Mock template data
-const mockTemplate: QuestionnaireTemplate = {
-  id: "1",
-  name: "Dental Implant Assessment",
-  description: "Comprehensive questionnaire for patients considering dental implants",
-  version: 2,
-  is_active: true,
-  language: "en",
-  created_at: "2024-01-15T10:00:00Z",
-  updated_at: "2024-01-20T14:30:00Z",
-  total_pages: 5,
-  estimated_completion_minutes: 15,
-  configuration: {},
-  introduction_text: "Welcome to our dental implant assessment",
-  completion_message: "Thank you for completing the assessment"
-}
 
-// Mock pages data
-const mockPages: QuestionnairePage[] = [
-  {
-    id: "page-1",
-    template_id: "1",
-    title: "Personal Information",
-    description: "Basic demographic and contact information",
-    page_number: 1,
-    page_type: "standard",
-    instruction_text: "Please provide your basic information to help us serve you better.",
-    show_progress: true,
-    allow_back_navigation: false,
-    auto_advance: false,
-    validation_rules: {},
-    created_at: "2024-01-15T10:00:00Z",
-    updated_at: "2024-01-15T10:00:00Z"
-  },
-  {
-    id: "page-2", 
-    template_id: "1",
-    title: "Medical History",
-    description: "Current health status and medical background",
-    page_number: 2,
-    page_type: "standard",
-    instruction_text: "Your medical history helps us provide the best treatment recommendations.",
-    show_progress: true,
-    allow_back_navigation: true,
-    auto_advance: false,
-    validation_rules: {},
-    created_at: "2024-01-15T10:00:00Z",
-    updated_at: "2024-01-15T10:00:00Z"
-  },
-  {
-    id: "page-3",
-    template_id: "1", 
-    title: "Photo Upload",
-    description: "Upload dental photos for assessment",
-    page_number: 3,
-    page_type: "photo_upload",
-    instruction_text: "Please upload clear photos of your teeth as instructed.",
-    show_progress: true,
-    allow_back_navigation: true,
-    auto_advance: false,
-    validation_rules: {},
-    created_at: "2024-01-15T10:00:00Z",
-    updated_at: "2024-01-15T10:00:00Z"
-  }
-]
 
 // Page templates for quick insertion
 const pageTemplates = [
@@ -338,12 +276,14 @@ export default function EditTemplatePage() {
   const params = useParams()
   const router = useRouter()
   const [template, setTemplate] = useState<QuestionnaireTemplate | null>(null)
-  const [pages, setPages] = useState<QuestionnairePage[]>(mockPages)
+  const [pages, setPages] = useState<QuestionnairePage[]>([])
+  const [questions, setQuestions] = useState<QuestionnaireQuestion[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [showPageDialog, setShowPageDialog] = useState(false)
   const [editingPage, setEditingPage] = useState<QuestionnairePage | null>(null)
   const [activeTab, setActiveTab] = useState("pages")
+  const [error, setError] = useState<string | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -366,62 +306,96 @@ export default function EditTemplatePage() {
   })
 
   useEffect(() => {
-    // TODO: Replace with actual API call
-    const fetchTemplate = async () => {
+    const fetchTemplateData = async () => {
       try {
-        await new Promise(resolve => setTimeout(resolve, 500))
-        setTemplate(mockTemplate)
-      } catch (error) {
-        console.error("Error fetching template:", error)
+        setLoading(true)
+        setError(null)
+
+        // Fetch template with details
+        const templateData = await QuestionnaireTemplateService.getById(params.id as string)
+        if (!templateData) {
+          setError("Template not found")
+          return
+        }
+        
+        setTemplate(templateData)
+
+        // Fetch pages for this template
+        const pagesData = await QuestionnairePageService.getByTemplateId(params.id as string)
+        setPages(pagesData)
+
+        // Fetch all questions for this template
+        const questionsData = await QuestionnaireQuestionService.getByTemplateId(params.id as string)
+        setQuestions(questionsData)
+
+      } catch (err) {
+        console.error("Error fetching template data:", err)
+        setError(err instanceof Error ? err.message : "Failed to load template")
+        toast.error("Failed to load template data")
       } finally {
         setLoading(false)
       }
     }
 
-    fetchTemplate()
+    fetchTemplateData()
   }, [params.id])
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event
 
     if (over && active.id !== over.id) {
-      setPages((items) => {
-        const oldIndex = items.findIndex((item) => item.id === active.id)
-        const newIndex = items.findIndex((item) => item.id === over.id)
-        
-        const newItems = arrayMove(items, oldIndex, newIndex)
-        
-        // Update page numbers
-        return newItems.map((item, index) => ({
-          ...item,
-          page_number: index + 1
-        }))
-      })
+      const oldIndex = pages.findIndex((item) => item.id === active.id)
+      const newIndex = pages.findIndex((item) => item.id === over.id)
+      
+      const newItems = arrayMove(pages, oldIndex, newIndex)
+      
+      // Update page numbers
+      const updatedItems = newItems.map((item, index) => ({
+        ...item,
+        page_number: index + 1
+      }))
+      
+      // Optimistically update UI
+      setPages(updatedItems)
+      
+      try {
+        // Save new page order to database
+        const pageIds = updatedItems.map(page => page.id)
+        await QuestionnairePageService.reorder(params.id as string, pageIds)
+        toast.success("Page order updated")
+      } catch (err) {
+        console.error("Error reordering pages:", err)
+        toast.error("Failed to update page order")
+        // Revert on error
+        setPages(pages)
+      }
     }
   }
 
-  const handleAddPage = (template?: any) => {
+  const handleAddPage = async (template?: any) => {
     const newPageNumber = Math.max(...pages.map(p => p.page_number), 0) + 1
     
     if (template) {
       // Add from template
-      const newPage: QuestionnairePage = {
-        id: `page-${Date.now()}`,
-        template_id: params.id as string,
-        title: template.defaultConfig.title,
-        description: template.defaultConfig.description,
-        page_number: newPageNumber,
-        page_type: template.defaultConfig.page_type,
-        instruction_text: template.defaultConfig.instruction_text,
-        show_progress: template.defaultConfig.show_progress,
-        allow_back_navigation: template.defaultConfig.allow_back_navigation,
-        auto_advance: template.defaultConfig.auto_advance,
-        validation_rules: {},
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+      try {
+        const newPage = await QuestionnairePageService.create({
+          template_id: params.id as string,
+          title: template.defaultConfig.title,
+          description: template.defaultConfig.description,
+          page_number: newPageNumber,
+          page_type: template.defaultConfig.page_type,
+          instruction_text: template.defaultConfig.instruction_text,
+          show_progress: template.defaultConfig.show_progress,
+          allow_back_navigation: template.defaultConfig.allow_back_navigation,
+          auto_advance: template.defaultConfig.auto_advance
+        })
+        
+        setPages(prev => [...prev, newPage])
+        toast.success("Page added successfully")
+      } catch (err) {
+        console.error("Error adding page:", err)
+        toast.error("Failed to add page")
       }
-      
-      setPages(prev => [...prev, newPage])
     } else {
       // Open dialog for custom page
       pageForm.reset()
@@ -444,81 +418,112 @@ export default function EditTemplatePage() {
     setShowPageDialog(true)
   }
 
-  const handleSavePage = (data: PageConfigData) => {
-    if (editingPage) {
-      // Update existing page
-      setPages(prev => prev.map(page => 
-        page.id === editingPage.id
-          ? {
-              ...page,
-              title: data.title,
-              description: data.description,
-              instruction_text: data.instruction_text,
-              page_type: data.page_type,
-              show_progress: data.show_progress,
-              allow_back_navigation: data.allow_back_navigation,
-              auto_advance: data.auto_advance,
-              updated_at: new Date().toISOString()
-            }
-          : page
-      ))
-    } else {
-      // Add new page
-      const newPage: QuestionnairePage = {
-        id: `page-${Date.now()}`,
-        template_id: params.id as string,
-        title: data.title,
-        description: data.description,
-        page_number: Math.max(...pages.map(p => p.page_number), 0) + 1,
-        page_type: data.page_type,
-        instruction_text: data.instruction_text,
-        show_progress: data.show_progress,
-        allow_back_navigation: data.allow_back_navigation,
-        auto_advance: data.auto_advance,
-        validation_rules: {},
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+  const handleSavePage = async (data: PageConfigData) => {
+    try {
+      if (editingPage) {
+        // Update existing page
+        const updatedPage = await QuestionnairePageService.update(editingPage.id, {
+          title: data.title,
+          description: data.description,
+          instruction_text: data.instruction_text,
+          page_type: data.page_type,
+          show_progress: data.show_progress,
+          allow_back_navigation: data.allow_back_navigation,
+          auto_advance: data.auto_advance
+        })
+        
+        setPages(prev => prev.map(page => 
+          page.id === editingPage.id ? updatedPage : page
+        ))
+        toast.success("Page updated successfully")
+      } else {
+        // Add new page
+        const newPage = await QuestionnairePageService.create({
+          template_id: params.id as string,
+          title: data.title,
+          description: data.description,
+          page_number: Math.max(...pages.map(p => p.page_number), 0) + 1,
+          page_type: data.page_type,
+          instruction_text: data.instruction_text,
+          show_progress: data.show_progress,
+          allow_back_navigation: data.allow_back_navigation,
+          auto_advance: data.auto_advance
+        })
+        
+        setPages(prev => [...prev, newPage])
+        toast.success("Page created successfully")
       }
       
+      setShowPageDialog(false)
+      setEditingPage(null)
+    } catch (err) {
+      console.error("Error saving page:", err)
+      toast.error("Failed to save page")
+    }
+  }
+
+  const handleDeletePage = async (pageId: string) => {
+    try {
+      await QuestionnairePageService.delete(pageId)
+      
+      setPages(prev => {
+        const filtered = prev.filter(p => p.id !== pageId)
+        // Renumber pages
+        return filtered.map((page, index) => ({
+          ...page,
+          page_number: index + 1
+        }))
+      })
+      
+      // Also remove questions for this page
+      setQuestions(prev => prev.filter(q => q.page_id !== pageId))
+      
+      toast.success("Page deleted successfully")
+    } catch (err) {
+      console.error("Error deleting page:", err)
+      toast.error("Failed to delete page")
+    }
+  }
+
+  const handleDuplicatePage = async (page: QuestionnairePage) => {
+    try {
+      const newPage = await QuestionnairePageService.create({
+        template_id: params.id as string,
+        title: `${page.title} (Copy)`,
+        description: page.description,
+        page_number: Math.max(...pages.map(p => p.page_number), 0) + 1,
+        page_type: page.page_type,
+        instruction_text: page.instruction_text,
+        show_progress: page.show_progress,
+        allow_back_navigation: page.allow_back_navigation,
+        auto_advance: page.auto_advance
+      })
+      
       setPages(prev => [...prev, newPage])
+      toast.success("Page duplicated successfully")
+    } catch (err) {
+      console.error("Error duplicating page:", err)
+      toast.error("Failed to duplicate page")
     }
-    
-    setShowPageDialog(false)
-    setEditingPage(null)
-  }
-
-  const handleDeletePage = (pageId: string) => {
-    setPages(prev => {
-      const filtered = prev.filter(p => p.id !== pageId)
-      // Renumber pages
-      return filtered.map((page, index) => ({
-        ...page,
-        page_number: index + 1
-      }))
-    })
-  }
-
-  const handleDuplicatePage = (page: QuestionnairePage) => {
-    const newPage: QuestionnairePage = {
-      ...page,
-      id: `page-${Date.now()}`,
-      title: `${page.title} (Copy)`,
-      page_number: Math.max(...pages.map(p => p.page_number), 0) + 1,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }
-    
-    setPages(prev => [...prev, newPage])
   }
 
   const handleSaveTemplate = async () => {
+    if (!template) return
+    
     setSaving(true)
     try {
-      // TODO: Implement actual save API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      console.log("Saving template with pages:", { template, pages })
-    } catch (error) {
-      console.error("Error saving template:", error)
+      // Update template total_pages count
+      await QuestionnaireTemplateService.update(template.id, {
+        total_pages: pages.length
+      })
+      
+      // Update local template state
+      setTemplate(prev => prev ? { ...prev, total_pages: pages.length } : null)
+      
+      toast.success("Template saved successfully")
+    } catch (err) {
+      console.error("Error saving template:", err)
+      toast.error("Failed to save template")
     } finally {
       setSaving(false)
     }
@@ -540,26 +545,43 @@ export default function EditTemplatePage() {
     )
   }
 
-  if (!template) {
+  if (error || (!loading && !template)) {
     return (
       <div className="space-y-6">
         <Card className="text-center py-12">
           <CardContent>
-            <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Template not found</h3>
+            <div className="mx-auto h-12 w-12 text-red-500 mb-4">
+              <svg className="h-full w-full" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.684-.833-2.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold mb-2 text-red-600">
+              {error ? "Error loading template" : "Template not found"}
+            </h3>
             <p className="text-muted-foreground mb-4">
-              The template you&apos;re looking for doesn&apos;t exist or has been deleted.
+              {error || "The template you're looking for doesn't exist or has been deleted."}
             </p>
-            <Button asChild>
-              <Link href="/admin/templates">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Templates
-              </Link>
-            </Button>
+            <div className="flex justify-center gap-2">
+              <Button asChild>
+                <Link href="/admin/templates">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Templates
+                </Link>
+              </Button>
+              {error && (
+                <Button variant="outline" onClick={() => window.location.reload()}>
+                  Try Again
+                </Button>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
     )
+  }
+
+  if (!template) {
+    return null // This shouldn't happen due to the above check, but keeps TypeScript happy
   }
 
   return (

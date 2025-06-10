@@ -89,6 +89,8 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 
 import { QuestionnaireTemplate, QuestionnairePage, QuestionnaireQuestion, QuestionType } from "@/types/database"
+import { QuestionnaireTemplateService, QuestionnairePageService, QuestionnaireQuestionService } from "@/lib/database"
+import { toast } from "sonner"
 
 // Question configuration schema
 const questionConfigSchema = z.object({
@@ -108,95 +110,7 @@ const questionConfigSchema = z.object({
 
 type QuestionConfigData = z.infer<typeof questionConfigSchema>
 
-// Mock data
-const mockTemplate: QuestionnaireTemplate = {
-  id: "1",
-  name: "Dental Implant Assessment",
-  description: "Comprehensive questionnaire for patients considering dental implants",
-  version: 2,
-  is_active: true,
-  language: "en",
-  created_at: "2024-01-15T10:00:00Z",
-  updated_at: "2024-01-20T14:30:00Z",
-  total_pages: 5,
-  estimated_completion_minutes: 15,
-  configuration: {},
-  introduction_text: "Welcome to our dental implant assessment",
-  completion_message: "Thank you for completing the assessment"
-}
 
-const mockPage: QuestionnairePage = {
-  id: "page-1",
-  template_id: "1",
-  title: "Personal Information",
-  description: "Basic demographic and contact information",
-  page_number: 1,
-  page_type: "standard",
-  instruction_text: "Please provide your basic information to help us serve you better.",
-  show_progress: true,
-  allow_back_navigation: false,
-  auto_advance: false,
-  validation_rules: {},
-  created_at: "2024-01-15T10:00:00Z",
-  updated_at: "2024-01-15T10:00:00Z"
-}
-
-const mockQuestions: QuestionnaireQuestion[] = [
-  {
-    id: "q1",
-    template_id: "1",
-    page_id: "page-1",
-    section: "personal",
-    question_text: "What is your full name?",
-    question_type: "text",
-    options: {},
-    validation_rules: { max_length: 100 },
-    is_required: true,
-    order_index: 1,
-    help_text: "Please enter your first and last name",
-    placeholder_text: "e.g., John Smith",
-    question_group: "basic_info",
-    display_logic: {},
-    created_at: "2024-01-15T10:00:00Z",
-    updated_at: "2024-01-15T10:00:00Z"
-  },
-  {
-    id: "q2",
-    template_id: "1",
-    page_id: "page-1",
-    section: "personal",
-    question_text: "What is your email address?",
-    question_type: "email",
-    options: {},
-    validation_rules: { format: "email" },
-    is_required: true,
-    order_index: 2,
-    help_text: "We'll use this to send you updates about your treatment",
-    placeholder_text: "john@example.com",
-    question_group: "contact",
-    display_logic: {},
-    created_at: "2024-01-15T10:00:00Z",
-    updated_at: "2024-01-15T10:00:00Z"
-  },
-  {
-    id: "q3",
-    template_id: "1",
-    page_id: "page-1",
-    section: "personal",
-    question_text: "What is your age?",
-    question_type: "number",
-    options: {},
-    validation_rules: { min: 18, max: 100 },
-    is_required: true,
-    order_index: 3,
-    help_text: "Must be 18 or older for treatment",
-    placeholder_text: "e.g., 35",
-    question_group: "basic_info",
-    display_logic: {},
-    created_at: "2024-01-15T10:00:00Z",
-    updated_at: "2024-01-15T10:00:00Z"
-  }
-]
 
 // Question type definitions with icons and categories
 const questionTypes = [
@@ -477,12 +391,13 @@ export default function QuestionEditorPage() {
   const router = useRouter()
   const [template, setTemplate] = useState<QuestionnaireTemplate | null>(null)
   const [page, setPage] = useState<QuestionnairePage | null>(null)
-  const [questions, setQuestions] = useState<QuestionnaireQuestion[]>(mockQuestions)
+  const [questions, setQuestions] = useState<QuestionnaireQuestion[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [showQuestionDialog, setShowQuestionDialog] = useState(false)
   const [editingQuestion, setEditingQuestion] = useState<QuestionnaireQuestion | null>(null)
   const [activeTab, setActiveTab] = useState("questions")
+  const [error, setError] = useState<string | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -506,14 +421,35 @@ export default function QuestionEditorPage() {
   })
 
   useEffect(() => {
-    // TODO: Replace with actual API call
     const fetchData = async () => {
       try {
-        await new Promise(resolve => setTimeout(resolve, 500))
-        setTemplate(mockTemplate)
-        setPage(mockPage)
-      } catch (error) {
-        console.error("Error fetching data:", error)
+        setLoading(true)
+        setError(null)
+
+        // Fetch template
+        const templateData = await QuestionnaireTemplateService.getById(params.id as string)
+        if (!templateData) {
+          setError("Template not found")
+          return
+        }
+        setTemplate(templateData)
+
+        // Fetch page
+        const pageData = await QuestionnairePageService.getById(params.pageId as string)
+        if (!pageData) {
+          setError("Page not found")
+          return
+        }
+        setPage(pageData)
+
+        // Fetch questions for this page
+        const questionsData = await QuestionnaireQuestionService.getByPageId(params.pageId as string)
+        setQuestions(questionsData)
+
+      } catch (err) {
+        console.error("Error fetching data:", err)
+        setError(err instanceof Error ? err.message : "Failed to load data")
+        toast.error("Failed to load question data")
       } finally {
         setLoading(false)
       }
@@ -522,45 +458,61 @@ export default function QuestionEditorPage() {
     fetchData()
   }, [params.id, params.pageId])
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event
 
     if (over && active.id !== over.id) {
-      setQuestions((items) => {
-        const oldIndex = items.findIndex((item) => item.id === active.id)
-        const newIndex = items.findIndex((item) => item.id === over.id)
-        
-        const newItems = arrayMove(items, oldIndex, newIndex)
-        
-        // Update order indices
-        return newItems.map((item, index) => ({
-          ...item,
-          order_index: index + 1
-        }))
-      })
+      const oldIndex = questions.findIndex((item) => item.id === active.id)
+      const newIndex = questions.findIndex((item) => item.id === over.id)
+      
+      const newItems = arrayMove(questions, oldIndex, newIndex)
+      
+      // Update order indices
+      const updatedItems = newItems.map((item, index) => ({
+        ...item,
+        order_index: index + 1
+      }))
+      
+      // Optimistically update UI
+      setQuestions(updatedItems)
+      
+      try {
+        // Save new question order to database
+        const questionIds = updatedItems.map(q => q.id)
+        await QuestionnaireQuestionService.reorder(params.pageId as string, questionIds)
+        toast.success("Question order updated")
+      } catch (err) {
+        console.error("Error reordering questions:", err)
+        toast.error("Failed to update question order")
+        // Revert on error
+        setQuestions(questions)
+      }
     }
   }
 
-  const handleAddQuestion = (questionType?: QuestionType) => {
+  const handleAddQuestion = async (questionType?: QuestionType) => {
     if (questionType) {
       // Add question with specific type
-      const newQuestion: QuestionnaireQuestion = {
-        id: `question-${Date.now()}`,
-        template_id: params.id as string,
-        page_id: params.pageId as string,
-        section: "general",
-        question_text: `New ${questionTypes.find(t => t.type === questionType)?.name || questionType} Question`,
-        question_type: questionType,
-        options: {},
-        validation_rules: {},
-        is_required: false,
-        order_index: Math.max(...questions.map(q => q.order_index), 0) + 1,
-        display_logic: {},
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+      try {
+        const newQuestion = await QuestionnaireQuestionService.create({
+          template_id: params.id as string,
+          page_id: params.pageId as string,
+          section: "general",
+          question_text: `New ${questionTypes.find(t => t.type === questionType)?.name || questionType} Question`,
+          question_type: questionType,
+          options: {},
+          validation_rules: {},
+          is_required: false,
+          order_index: Math.max(...questions.map(q => q.order_index), 0) + 1,
+          conditional_logic: {}
+        })
+        
+        setQuestions(prev => [...prev, newQuestion])
+        toast.success("Question added successfully")
+      } catch (err) {
+        console.error("Error adding question:", err)
+        toast.error("Failed to add question")
       }
-      
-      setQuestions(prev => [...prev, newQuestion])
     } else {
       // Open dialog for custom question
       questionForm.reset()
@@ -584,87 +536,118 @@ export default function QuestionEditorPage() {
     setShowQuestionDialog(true)
   }
 
-  const handleSaveQuestion = (data: QuestionConfigData) => {
-    if (editingQuestion) {
-      // Update existing question
-      setQuestions(prev => prev.map(question => 
-        question.id === editingQuestion.id
-          ? {
-              ...question,
-              question_text: data.question_text,
-              question_type: data.question_type,
-              help_text: data.help_text,
-              placeholder_text: data.placeholder_text,
-              tooltip_text: data.tooltip_text,
-              is_required: data.is_required,
-              validation_message: data.validation_message,
-              question_group: data.question_group,
-              updated_at: new Date().toISOString()
-            }
-          : question
-      ))
-    } else {
-      // Add new question
-      const newQuestion: QuestionnaireQuestion = {
-        id: `question-${Date.now()}`,
-        template_id: params.id as string,
-        page_id: params.pageId as string,
-        section: "general",
-        question_text: data.question_text,
-        question_type: data.question_type,
-        options: {},
-        validation_rules: {},
-        is_required: data.is_required,
-        order_index: Math.max(...questions.map(q => q.order_index), 0) + 1,
-        help_text: data.help_text,
-        placeholder_text: data.placeholder_text,
-        tooltip_text: data.tooltip_text,
-        validation_message: data.validation_message,
-        question_group: data.question_group,
-        display_logic: {},
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+  const handleSaveQuestion = async (data: QuestionConfigData) => {
+    try {
+      if (editingQuestion) {
+        // Update existing question
+        const updatedQuestion = await QuestionnaireQuestionService.update(editingQuestion.id, {
+          question_text: data.question_text,
+          question_type: data.question_type,
+          help_text: data.help_text,
+          placeholder_text: data.placeholder_text,
+          tooltip_text: data.tooltip_text,
+          is_required: data.is_required,
+          validation_message: data.validation_message,
+          question_group: data.question_group
+        })
+        
+        setQuestions(prev => prev.map(question => 
+          question.id === editingQuestion.id ? updatedQuestion : question
+        ))
+        toast.success("Question updated successfully")
+      } else {
+        // Add new question
+        const newQuestion = await QuestionnaireQuestionService.create({
+          template_id: params.id as string,
+          page_id: params.pageId as string,
+          section: "general",
+          question_text: data.question_text,
+          question_type: data.question_type,
+          options: {},
+          validation_rules: {},
+          is_required: data.is_required,
+          order_index: Math.max(...questions.map(q => q.order_index), 0) + 1,
+          help_text: data.help_text,
+          placeholder_text: data.placeholder_text,
+          tooltip_text: data.tooltip_text,
+          validation_message: data.validation_message,
+          question_group: data.question_group,
+          conditional_logic: {}
+        })
+        
+        setQuestions(prev => [...prev, newQuestion])
+        toast.success("Question created successfully")
       }
       
+      setShowQuestionDialog(false)
+      setEditingQuestion(null)
+    } catch (err) {
+      console.error("Error saving question:", err)
+      toast.error("Failed to save question")
+    }
+  }
+
+  const handleDeleteQuestion = async (questionId: string) => {
+    try {
+      await QuestionnaireQuestionService.delete(questionId)
+      
+      setQuestions(prev => {
+        const filtered = prev.filter(q => q.id !== questionId)
+        // Renumber questions
+        return filtered.map((question, index) => ({
+          ...question,
+          order_index: index + 1
+        }))
+      })
+      
+      toast.success("Question deleted successfully")
+    } catch (err) {
+      console.error("Error deleting question:", err)
+      toast.error("Failed to delete question")
+    }
+  }
+
+  const handleDuplicateQuestion = async (question: QuestionnaireQuestion) => {
+    try {
+      const newQuestion = await QuestionnaireQuestionService.create({
+        template_id: params.id as string,
+        page_id: params.pageId as string,
+        section: question.section,
+        question_text: `${question.question_text} (Copy)`,
+        question_type: question.question_type,
+        options: question.options,
+        validation_rules: question.validation_rules,
+        is_required: question.is_required,
+        order_index: Math.max(...questions.map(q => q.order_index), 0) + 1,
+        conditional_logic: question.conditional_logic,
+        help_text: question.help_text,
+        placeholder_text: question.placeholder_text,
+        question_group: question.question_group,
+        validation_message: question.validation_message,
+        tooltip_text: question.tooltip_text
+      })
+      
       setQuestions(prev => [...prev, newQuestion])
+      toast.success("Question duplicated successfully")
+    } catch (err) {
+      console.error("Error duplicating question:", err)
+      toast.error("Failed to duplicate question")
     }
-    
-    setShowQuestionDialog(false)
-    setEditingQuestion(null)
-  }
-
-  const handleDeleteQuestion = (questionId: string) => {
-    setQuestions(prev => {
-      const filtered = prev.filter(q => q.id !== questionId)
-      // Renumber questions
-      return filtered.map((question, index) => ({
-        ...question,
-        order_index: index + 1
-      }))
-    })
-  }
-
-  const handleDuplicateQuestion = (question: QuestionnaireQuestion) => {
-    const newQuestion: QuestionnaireQuestion = {
-      ...question,
-      id: `question-${Date.now()}`,
-      question_text: `${question.question_text} (Copy)`,
-      order_index: Math.max(...questions.map(q => q.order_index), 0) + 1,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }
-    
-    setQuestions(prev => [...prev, newQuestion])
   }
 
   const handleSave = async () => {
     setSaving(true)
     try {
-      // TODO: Implement actual save API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      console.log("Saving questions:", questions)
-    } catch (error) {
-      console.error("Error saving questions:", error)
+      // Questions are already saved individually, so just update the page
+      // to ensure consistency
+      await QuestionnairePageService.update(params.pageId as string, {
+        updated_at: new Date().toISOString()
+      })
+      
+      toast.success("Questions saved successfully")
+    } catch (err) {
+      console.error("Error saving questions:", err)
+      toast.error("Failed to save questions")
     } finally {
       setSaving(false)
     }
@@ -686,26 +669,43 @@ export default function QuestionEditorPage() {
     )
   }
 
-  if (!template || !page) {
+  if (error || (!loading && (!template || !page))) {
     return (
       <div className="space-y-6">
         <Card className="text-center py-12">
           <CardContent>
-            <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Page not found</h3>
+            <div className="mx-auto h-12 w-12 text-red-500 mb-4">
+              <svg className="h-full w-full" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.684-.833-2.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold mb-2 text-red-600">
+              {error ? "Error loading page" : "Page not found"}
+            </h3>
             <p className="text-muted-foreground mb-4">
-              The page you&apos;re looking for doesn&apos;t exist or has been deleted.
+              {error || "The page you're looking for doesn't exist or has been deleted."}
             </p>
-            <Button asChild>
-              <Link href={`/admin/templates/${params.id}/edit`}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Template
-              </Link>
-            </Button>
+            <div className="flex justify-center gap-2">
+              <Button asChild>
+                <Link href={`/admin/templates/${params.id}/edit`}>
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Template
+                </Link>
+              </Button>
+              {error && (
+                <Button variant="outline" onClick={() => window.location.reload()}>
+                  Try Again
+                </Button>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
     )
+  }
+
+  if (!template || !page) {
+    return null // This shouldn't happen due to the above check, but keeps TypeScript happy
   }
 
   return (

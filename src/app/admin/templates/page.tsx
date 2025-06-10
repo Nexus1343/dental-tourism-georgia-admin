@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { DeleteConfirmDialog } from "@/components/ui/confirm-dialog"
+import { toast } from "sonner"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,126 +39,81 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { QuestionnaireTemplate } from "@/types/database"
-
-// Mock data for development - will be replaced with actual API calls
-const mockTemplates: QuestionnaireTemplate[] = [
-  {
-    id: "1",
-    name: "Dental Implant Assessment",
-    description: "Comprehensive questionnaire for patients considering dental implants",
-    version: 2,
-    is_active: true,
-    language: "en",
-    created_at: "2024-01-15T10:00:00Z",
-    updated_at: "2024-01-20T14:30:00Z",
-    total_pages: 5,
-    estimated_completion_minutes: 15,
-    configuration: {},
-    introduction_text: "Welcome to our dental implant assessment",
-    completion_message: "Thank you for completing the assessment"
-  },
-  {
-    id: "2", 
-    name: "Orthodontic Consultation",
-    description: "Initial consultation form for orthodontic treatments",
-    version: 1,
-    is_active: false,
-    language: "en",
-    created_at: "2024-01-10T09:00:00Z",
-    updated_at: "2024-01-10T09:00:00Z",
-    total_pages: 3,
-    estimated_completion_minutes: 10,
-    configuration: {},
-    introduction_text: "Welcome to our orthodontic consultation",
-    completion_message: "Thank you for your interest in orthodontic treatment"
-  },
-  {
-    id: "3",
-    name: "General Dental Checkup",
-    description: "Standard questionnaire for routine dental checkups",
-    version: 3,
-    is_active: true,
-    language: "en", 
-    created_at: "2024-01-05T08:00:00Z",
-    updated_at: "2024-01-25T16:00:00Z",
-    total_pages: 4,
-    estimated_completion_minutes: 8,
-    configuration: {},
-    introduction_text: "Welcome to our dental checkup questionnaire",
-    completion_message: "Thank you for providing your health information"
-  },
-  {
-    id: "4",
-    name: "Cosmetic Dentistry Consultation",
-    description: "Detailed assessment for cosmetic dental procedures",
-    version: 1,
-    is_active: true,
-    language: "en",
-    created_at: "2024-01-22T11:00:00Z", 
-    updated_at: "2024-01-22T11:00:00Z",
-    total_pages: 6,
-    estimated_completion_minutes: 20,
-    configuration: {},
-    introduction_text: "Welcome to our cosmetic dentistry consultation",
-    completion_message: "Thank you for sharing your aesthetic goals"
-  }
-]
+import { QuestionnaireTemplateService } from "@/lib/database"
 
 export default function TemplatesPage() {
-  const [templates, setTemplates] = useState<QuestionnaireTemplate[]>(mockTemplates)
-  const [filteredTemplates, setFilteredTemplates] = useState<QuestionnaireTemplate[]>(mockTemplates)
+  const [templates, setTemplates] = useState<QuestionnaireTemplate[]>([])
+  const [filteredTemplates, setFilteredTemplates] = useState<QuestionnaireTemplate[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [languageFilter, setLanguageFilter] = useState<string>("all")
   const [selectedTemplates, setSelectedTemplates] = useState<string[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  // Filter templates based on search and filters
+  // Load templates from database
   useEffect(() => {
-    let filtered = templates
-
-    // Search filter
-    if (searchQuery) {
-      filtered = filtered.filter(template => 
-        template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        template.description?.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+    const loadTemplates = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        
+        const response = await QuestionnaireTemplateService.getAll({
+          search: searchQuery || undefined,
+          status: statusFilter === "all" ? undefined : (statusFilter as "active" | "inactive"),
+          language: languageFilter === "all" ? undefined : languageFilter,
+          page: 1,
+          limit: 50 // Load first 50 templates
+        })
+        
+        setTemplates(response.data)
+        setFilteredTemplates(response.data)
+      } catch (err) {
+        console.error("Error loading templates:", err)
+        setError(err instanceof Error ? err.message : "Failed to load templates")
+        toast.error("Failed to load templates")
+      } finally {
+        setLoading(false)
+      }
     }
 
-    // Status filter
-    if (statusFilter !== "all") {
-      filtered = filtered.filter(template => 
-        statusFilter === "active" ? template.is_active : !template.is_active
-      )
-    }
+    // Debounce search queries
+    const timeoutId = setTimeout(() => {
+      loadTemplates()
+    }, searchQuery ? 300 : 0) // 300ms debounce for search, immediate for filters
 
-    // Language filter
-    if (languageFilter !== "all") {
-      filtered = filtered.filter(template => template.language === languageFilter)
-    }
+    return () => clearTimeout(timeoutId)
+  }, [searchQuery, statusFilter, languageFilter])
 
-    setFilteredTemplates(filtered)
-  }, [templates, searchQuery, statusFilter, languageFilter])
+  // Filter templates based on search and filters (now handled by the service)
+  useEffect(() => {
+    setFilteredTemplates(templates)
+  }, [templates])
 
   const handleDeleteTemplate = async (templateId: string) => {
-    // TODO: Implement actual delete API call
-    setTemplates(prev => prev.filter(t => t.id !== templateId))
-    setSelectedTemplates(prev => prev.filter(id => id !== templateId))
+    try {
+      await QuestionnaireTemplateService.delete(templateId)
+      setTemplates(prev => prev.filter(t => t.id !== templateId))
+      setSelectedTemplates(prev => prev.filter(id => id !== templateId))
+      toast.success("Template deleted successfully")
+    } catch (err) {
+      console.error("Error deleting template:", err)
+      toast.error("Failed to delete template")
+    }
   }
 
   const handleDuplicateTemplate = async (templateId: string) => {
-    // TODO: Implement actual duplicate API call
-    const template = templates.find(t => t.id === templateId)
-    if (template) {
-      const duplicated = {
-        ...template,
-        id: `${templateId}-copy`,
-        name: `${template.name} (Copy)`,
-        version: 1,
-        is_active: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
+    try {
+      const template = templates.find(t => t.id === templateId)
+      if (!template) return
+      
+      const newName = `${template.name} (Copy)`
+      const duplicated = await QuestionnaireTemplateService.duplicate(templateId, newName)
       setTemplates(prev => [duplicated, ...prev])
+      toast.success("Template duplicated successfully")
+    } catch (err) {
+      console.error("Error duplicating template:", err)
+      toast.error("Failed to duplicate template")
     }
   }
 
@@ -255,9 +211,57 @@ export default function TemplatesPage() {
         </CardContent>
       </Card>
 
+      {/* Loading State */}
+      {loading && (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Card key={i} className="relative">
+              <CardHeader className="pb-3">
+                <div className="space-y-2">
+                  <div className="h-5 bg-gray-200 rounded animate-pulse w-3/4"></div>
+                  <div className="flex gap-2">
+                    <div className="h-4 bg-gray-200 rounded animate-pulse w-16"></div>
+                    <div className="h-4 bg-gray-200 rounded animate-pulse w-12"></div>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="h-4 bg-gray-200 rounded animate-pulse w-full"></div>
+                  <div className="h-4 bg-gray-200 rounded animate-pulse w-2/3"></div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && !loading && (
+        <Card className="text-center py-12">
+          <CardContent>
+            <div className="mx-auto h-12 w-12 text-red-500 mb-4">
+              <svg className="h-full w-full" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.684-.833-2.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold mb-2 text-red-600">Failed to load templates</h3>
+            <p className="text-muted-foreground mb-4">{error}</p>
+            <Button onClick={() => window.location.reload()}>
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Templates Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {filteredTemplates.map((template) => (
+      {!loading && !error && (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {filteredTemplates.map((template) => (
           <Card key={template.id} className="relative group hover:shadow-md transition-shadow">
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
@@ -366,10 +370,11 @@ export default function TemplatesPage() {
             </CardContent>
           </Card>
         ))}
-      </div>
+        </div>
+      )}
 
       {/* Empty State */}
-      {filteredTemplates.length === 0 && (
+      {!loading && !error && filteredTemplates.length === 0 && (
         <Card className="text-center py-12">
           <CardContent>
             <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
@@ -391,7 +396,7 @@ export default function TemplatesPage() {
       )}
 
       {/* Pagination - TODO: Implement actual pagination */}
-      {filteredTemplates.length > 0 && (
+      {!loading && !error && filteredTemplates.length > 0 && (
         <div className="flex items-center justify-center">
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" disabled>

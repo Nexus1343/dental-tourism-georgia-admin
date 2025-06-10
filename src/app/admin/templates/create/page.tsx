@@ -30,6 +30,8 @@ import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
+import { QuestionnaireTemplateService } from "@/lib/database"
+import { toast } from "sonner"
 
 // Validation schemas for each step
 const basicInfoSchema = z.object({
@@ -120,17 +122,23 @@ export default function CreateTemplatePage() {
     try {
       const completeData = { ...formData, ...finalStepData }
       
-      // TODO: Replace with actual API call
-      console.log("Creating template:", completeData)
+      // Create template using the service
+      const newTemplate = await QuestionnaireTemplateService.create({
+        name: completeData.name!,
+        description: completeData.description,
+        estimated_completion_minutes: completeData.estimated_completion_minutes!,
+        introduction_text: completeData.introduction_text,
+        completion_message: completeData.completion_message,
+        language: completeData.language!
+      })
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      toast.success("Template created successfully!")
       
-      // Redirect to templates list or template edit page
-              router.push('/admin/templates')
+      // Redirect to template edit page to add pages and questions
+      router.push(`/admin/templates/${newTemplate.id}/edit`)
     } catch (error) {
       console.error("Error creating template:", error)
-      // TODO: Add error handling/toast notification
+      toast.error("Failed to create template. Please try again.")
     } finally {
       setIsSubmitting(false)
     }
@@ -138,14 +146,32 @@ export default function CreateTemplatePage() {
 
   const handleSaveDraft = async () => {
     const currentFormData = getCurrentStepData()
-    const draftData = { ...formData, ...currentFormData, is_active: false }
+    const draftData = { ...formData, ...currentFormData }
+    
+    // Check if we have minimum required data
+    if (!draftData.name || !draftData.estimated_completion_minutes) {
+      toast.error("Please fill in at least the template name and estimated completion time to save as draft.")
+      return
+    }
     
     try {
-      // TODO: Replace with actual API call to save as draft
-      console.log("Saving draft:", draftData)
-      // Show success message
+      const draftTemplate = await QuestionnaireTemplateService.create({
+        name: draftData.name,
+        description: draftData.description || "",
+        estimated_completion_minutes: draftData.estimated_completion_minutes,
+        introduction_text: draftData.introduction_text || "",
+        completion_message: draftData.completion_message || "",
+        language: draftData.language || "en"
+      })
+      
+      // Set as inactive (draft)
+      await QuestionnaireTemplateService.update(draftTemplate.id, { is_active: false })
+      
+      toast.success("Draft saved successfully!")
+      router.push(`/admin/templates/${draftTemplate.id}/edit`)
     } catch (error) {
       console.error("Error saving draft:", error)
+      toast.error("Failed to save draft. Please try again.")
     }
   }
 

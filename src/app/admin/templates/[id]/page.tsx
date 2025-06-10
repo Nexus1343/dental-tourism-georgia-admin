@@ -39,59 +39,85 @@ import {
   Activity
 } from "lucide-react"
 import Link from "next/link"
-import { QuestionnaireTemplate } from "@/types/database"
+import { QuestionnaireTemplate, QuestionnairePage, QuestionnaireQuestion } from "@/types/database"
+import { QuestionnaireTemplateService, QuestionnairePageService, QuestionnaireQuestionService, ClinicTemplateService } from "@/lib/database"
+import { toast } from "sonner"
 
-// Mock data - will be replaced with actual API call
-const mockTemplate: QuestionnaireTemplate = {
-  id: "1",
-  name: "Dental Implant Assessment",
-  description: "Comprehensive questionnaire for patients considering dental implants. This template covers medical history, current oral health status, expectations, and budget considerations.",
-  version: 2,
-  is_active: true,
-  language: "en",
-  created_at: "2024-01-15T10:00:00Z",
-  updated_at: "2024-01-20T14:30:00Z",
-  total_pages: 5,
-  estimated_completion_minutes: 15,
-  configuration: {
-    allow_save_draft: true,
-    show_progress: true,
-    allow_back_navigation: true,
-    require_completion: false,
-    auto_save_interval: 60
-  },
-  introduction_text: "Welcome to our dental implant assessment questionnaire. This comprehensive evaluation will help our dental team understand your oral health history, current needs, and treatment preferences. The information you provide will be kept confidential and used solely for planning your dental care.",
-  completion_message: "Thank you for completing the dental implant assessment. Our dental team will review your responses and contact you within 2-3 business days to discuss your treatment options and schedule a consultation."
-}
-
-// Mock stats - will be replaced with actual API call
-const mockStats = {
-  totalSubmissions: 145,
-  completionRate: 87.2,
-  averageCompletionTime: 12.5,
-  assignedClinics: 8,
-  dropOffPoints: [
-    { page: "Medical History", dropOffRate: 15.2 },
-    { page: "Treatment Preferences", dropOffRate: 8.7 },
-    { page: "Budget Information", dropOffRate: 12.1 }
-  ]
+// Template statistics interface
+interface TemplateStats {
+  totalSubmissions: number
+  completionRate: number
+  averageCompletionTime: number
+  assignedClinics: number
+  dropOffPoints: Array<{
+    page: string
+    dropOffRate: number
+  }>
 }
 
 export default function TemplateDetailPage() {
   const params = useParams()
   const router = useRouter()
   const [template, setTemplate] = useState<QuestionnaireTemplate | null>(null)
+  const [stats, setStats] = useState<TemplateStats | null>(null)
+  const [pages, setPages] = useState<Array<{ id: string; title: string; description?: string; questionCount: number }>>([])
+  const [assignedClinics, setAssignedClinics] = useState<Array<{ id: string; name: string; status: string; isDefault: boolean }>>([])
+  const [versions, setVersions] = useState<QuestionnaireTemplate[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    // TODO: Replace with actual API call
     const fetchTemplate = async () => {
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 500))
-        setTemplate(mockTemplate)
-      } catch (error) {
-        console.error("Error fetching template:", error)
+        setLoading(true)
+        setError(null)
+        
+        // Fetch template with details
+        const templateData = await QuestionnaireTemplateService.getById(params.id as string)
+        if (!templateData) {
+          setError("Template not found")
+          return
+        }
+        
+        setTemplate(templateData)
+        
+        // Fetch real statistics from database
+        const statsData = await QuestionnaireTemplateService.getStatistics(params.id as string)
+        setStats(statsData)
+        
+        // Fetch pages with question counts
+        const pagesData = await QuestionnairePageService.getByTemplateId(params.id as string)
+        const pagesWithQuestionCounts = await Promise.all(
+          pagesData.map(async (page) => {
+            const questions = await QuestionnaireQuestionService.getByPageId(page.id)
+            return {
+              id: page.id,
+              title: page.title,
+              description: page.description,
+              questionCount: questions.length
+            }
+          })
+        )
+        setPages(pagesWithQuestionCounts)
+        
+        // Fetch assigned clinics
+        const clinicAssignments = await ClinicTemplateService.getTemplateAssignments(params.id as string)
+        const clinicsData = clinicAssignments.map((assignment: any) => ({
+          id: assignment.clinic_id,
+          name: assignment.clinic?.name || 'Unknown Clinic',
+          status: assignment.is_active ? 'Active' : 'Inactive',
+          isDefault: assignment.is_default
+        }))
+        setAssignedClinics(clinicsData)
+        
+        // Fetch template versions
+        const versionsData = await QuestionnaireTemplateService.getVersions(templateData.name)
+        setVersions(versionsData)
+        
+      } catch (err) {
+        console.error("Error fetching template:", err)
+        setError(err instanceof Error ? err.message : "Failed to load template")
+        toast.error("Failed to load template")
       } finally {
         setLoading(false)
       }
@@ -102,21 +128,26 @@ export default function TemplateDetailPage() {
 
   const handleDeleteTemplate = async () => {
     try {
-      // TODO: Implement actual delete API call
-      console.log("Deleting template:", params.id)
-              router.push('/admin/templates')
-    } catch (error) {
-      console.error("Error deleting template:", error)
+      await QuestionnaireTemplateService.delete(params.id as string)
+      toast.success("Template deleted successfully")
+      router.push('/admin/templates')
+    } catch (err) {
+      console.error("Error deleting template:", err)
+      toast.error("Failed to delete template")
     }
   }
 
   const handleDuplicateTemplate = async () => {
     try {
-      // TODO: Implement actual duplicate API call
-      console.log("Duplicating template:", params.id)
-      // Redirect to edit page of duplicated template
-    } catch (error) {
-      console.error("Error duplicating template:", error)
+      if (!template) return
+      
+      const newName = `${template.name} (Copy)`
+      const duplicated = await QuestionnaireTemplateService.duplicate(params.id as string, newName)
+      toast.success("Template duplicated successfully")
+      router.push(`/admin/templates/${duplicated.id}/edit`)
+    } catch (err) {
+      console.error("Error duplicating template:", err)
+      toast.error("Failed to duplicate template")
     }
   }
 
@@ -124,11 +155,12 @@ export default function TemplateDetailPage() {
     if (!template) return
     
     try {
-      // TODO: Implement actual API call
-      const updatedTemplate = { ...template, is_active: !template.is_active }
+      const updatedTemplate = await QuestionnaireTemplateService.toggleStatus(params.id as string)
       setTemplate(updatedTemplate)
-    } catch (error) {
-      console.error("Error updating template status:", error)
+      toast.success(`Template ${updatedTemplate.is_active ? 'activated' : 'deactivated'} successfully`)
+    } catch (err) {
+      console.error("Error updating template status:", err)
+      toast.error("Failed to update template status")
     }
   }
 
@@ -140,6 +172,35 @@ export default function TemplateDetailPage() {
       hour: '2-digit',
       minute: '2-digit'
     })
+  }
+
+  const handleCreateVersion = async () => {
+    try {
+      if (!template) return
+      
+      const newVersion = await QuestionnaireTemplateService.createVersion(template.id)
+      toast.success(`Version ${newVersion.version} created successfully`)
+      
+      // Refresh versions list
+      const versionsData = await QuestionnaireTemplateService.getVersions(template.name)
+      setVersions(versionsData)
+    } catch (err) {
+      console.error("Error creating version:", err)
+      toast.error("Failed to create new version")
+    }
+  }
+
+  const handleRollbackToVersion = async (versionId: string) => {
+    try {
+      if (!template) return
+      
+      const rolledBackTemplate = await QuestionnaireTemplateService.rollbackToVersion(template.id, versionId)
+      toast.success("Successfully rolled back to selected version")
+      router.push(`/admin/templates/${rolledBackTemplate.id}`)
+    } catch (err) {
+      console.error("Error rolling back version:", err)
+      toast.error("Failed to rollback to selected version")
+    }
   }
 
   if (loading) {
@@ -158,26 +219,39 @@ export default function TemplateDetailPage() {
     )
   }
 
-  if (!template) {
+  if (error || (!loading && !template)) {
     return (
       <div className="space-y-6">
         <Card className="text-center py-12">
           <CardContent>
             <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Template not found</h3>
+            <h3 className="text-lg font-semibold mb-2">
+              {error ? "Error loading template" : "Template not found"}
+            </h3>
             <p className="text-muted-foreground mb-4">
-              The template you&apos;re looking for doesn&apos;t exist or has been deleted.
+              {error || "The template you're looking for doesn't exist or has been deleted."}
             </p>
-            <Button asChild>
-              <Link href="/admin/templates">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Templates
-              </Link>
-            </Button>
+            <div className="flex justify-center gap-2">
+              <Button asChild>
+                <Link href="/admin/templates">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Templates
+                </Link>
+              </Button>
+              {error && (
+                <Button variant="outline" onClick={() => window.location.reload()}>
+                  Try Again
+                </Button>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
     )
+  }
+
+  if (!template) {
+    return null // This shouldn't happen due to the above check, but keeps TypeScript happy
   }
 
   return (
@@ -245,6 +319,10 @@ export default function TemplateDetailPage() {
                   </>
                 )}
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleCreateVersion}>
+                <Activity className="mr-2 h-4 w-4" />
+                Create Version
+              </DropdownMenuItem>
               <DropdownMenuItem>
                 <Download className="mr-2 h-4 w-4" />
                 Export Template
@@ -279,7 +357,7 @@ export default function TemplateDetailPage() {
               <Users className="h-5 w-5 text-blue-600" />
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Submissions</p>
-                <p className="text-2xl font-bold">{mockStats.totalSubmissions}</p>
+                <p className="text-2xl font-bold">{stats?.totalSubmissions || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -291,7 +369,7 @@ export default function TemplateDetailPage() {
               <BarChart3 className="h-5 w-5 text-green-600" />
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Completion Rate</p>
-                <p className="text-2xl font-bold">{mockStats.completionRate}%</p>
+                <p className="text-2xl font-bold">{stats?.completionRate || 0}%</p>
               </div>
             </div>
           </CardContent>
@@ -303,7 +381,7 @@ export default function TemplateDetailPage() {
               <Clock className="h-5 w-5 text-orange-600" />
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Avg. Completion Time</p>
-                <p className="text-2xl font-bold">{mockStats.averageCompletionTime} min</p>
+                <p className="text-2xl font-bold">{stats?.averageCompletionTime || 0} min</p>
               </div>
             </div>
           </CardContent>
@@ -315,7 +393,7 @@ export default function TemplateDetailPage() {
               <Building2 className="h-5 w-5 text-purple-600" />
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Assigned Clinics</p>
-                <p className="text-2xl font-bold">{mockStats.assignedClinics}</p>
+                <p className="text-2xl font-bold">{stats?.assignedClinics || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -330,6 +408,7 @@ export default function TemplateDetailPage() {
           <TabsTrigger value="configuration">Configuration</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="clinics">Clinics</TabsTrigger>
+          <TabsTrigger value="versions">Versions</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
@@ -433,27 +512,21 @@ export default function TemplateDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="p-4 border rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium">Page 1: Personal Information</h4>
-                    <Badge variant="outline">5 questions</Badge>
+                {pages.length === 0 ? (
+                  <div className="text-center text-muted-foreground">
+                    <p>No pages configured yet</p>
                   </div>
-                  <p className="text-sm text-muted-foreground">Basic demographic and contact information</p>
-                </div>
-                <div className="p-4 border rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium">Page 2: Medical History</h4>
-                    <Badge variant="outline">8 questions</Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">General health and dental history</p>
-                </div>
-                <div className="p-4 border rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium">Page 3: Treatment Preferences</h4>
-                    <Badge variant="outline">6 questions</Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">Desired outcomes and treatment preferences</p>
-                </div>
+                ) : (
+                  pages.map((page, index) => (
+                    <div key={page.id} className="p-4 border rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium">Page {index + 1}: {page.title}</h4>
+                        <Badge variant="outline">{page.questionCount} questions</Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{page.description}</p>
+                    </div>
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
@@ -529,27 +602,31 @@ export default function TemplateDetailPage() {
               <div className="grid gap-6 md:grid-cols-3">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Completion Rate</p>
-                  <p className="text-3xl font-bold text-green-600">{mockStats.completionRate}%</p>
+                  <p className="text-3xl font-bold text-green-600">{stats?.completionRate || 0}%</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Avg. Time</p>
-                  <p className="text-3xl font-bold">{mockStats.averageCompletionTime}m</p>
+                  <p className="text-3xl font-bold">{stats?.averageCompletionTime || 0}m</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Submissions</p>
-                  <p className="text-3xl font-bold">{mockStats.totalSubmissions}</p>
+                  <p className="text-3xl font-bold">{stats?.totalSubmissions || 0}</p>
                 </div>
               </div>
 
               <div>
                 <h4 className="font-medium mb-4">Drop-off Analysis</h4>
                 <div className="space-y-3">
-                  {mockStats.dropOffPoints.map((point, index) => (
+                  {stats?.dropOffPoints.map((point: { page: string; dropOffRate: number }, index: number) => (
                     <div key={index} className="flex items-center justify-between p-3 border rounded">
                       <span className="text-sm">{point.page}</span>
                       <Badge variant="outline">{point.dropOffRate}% drop-off</Badge>
                     </div>
-                  ))}
+                  )) || (
+                    <div className="text-center text-muted-foreground">
+                      <p>No analytics data available yet</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -570,27 +647,82 @@ export default function TemplateDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div>
-                    <h4 className="font-medium">Tbilisi Dental Center</h4>
-                    <p className="text-sm text-muted-foreground">Primary template</p>
+                {assignedClinics.length === 0 ? (
+                  <div className="text-center text-muted-foreground">
+                    <p>No clinics assigned yet</p>
                   </div>
-                  <Badge>Active</Badge>
-                </div>
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div>
-                    <h4 className="font-medium">Smile Studio Batumi</h4>
-                    <p className="text-sm text-muted-foreground">Secondary template</p>
+                ) : (
+                  assignedClinics.map((clinic) => (
+                    <div key={clinic.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div>
+                        <h4 className="font-medium">{clinic.name}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {clinic.isDefault ? 'Primary template' : 'Secondary template'}
+                        </p>
+                      </div>
+                      <Badge variant={clinic.status === 'Active' ? 'default' : 'secondary'}>
+                        {clinic.status}
+                      </Badge>
+                    </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Versions Tab */}
+        <TabsContent value="versions" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="h-5 w-5" />
+                Template Versions
+              </CardTitle>
+              <CardDescription>
+                Manage different versions of this template
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {versions.length === 0 ? (
+                  <div className="text-center text-muted-foreground">
+                    <p>No versions found</p>
                   </div>
-                  <Badge>Active</Badge>
-                </div>
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div>
-                    <h4 className="font-medium">Georgian Dental Academy</h4>
-                    <p className="text-sm text-muted-foreground">Testing purposes</p>
-                  </div>
-                  <Badge variant="secondary">Testing</Badge>
-                </div>
+                ) : (
+                  versions.map((version) => (
+                    <div key={version.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-medium">{version.name}</h4>
+                          <Badge variant="outline">v{version.version}</Badge>
+                          {version.id === template?.id && (
+                            <Badge>Current</Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Created {formatDate(version.created_at)}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        {version.id !== template?.id && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRollbackToVersion(version.id)}
+                          >
+                            Rollback
+                          </Button>
+                        )}
+                        <Button variant="outline" size="sm" asChild>
+                          <Link href={`/admin/templates/${version.id}`}>
+                            View
+                          </Link>
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
