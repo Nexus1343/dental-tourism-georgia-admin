@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Settings, Users, FileText, Calendar } from "lucide-react";
+import { Settings, Users, FileText, Calendar, ClipboardList } from "lucide-react";
 
 export default function Home() {
   return (
@@ -19,7 +19,7 @@ export default function Home() {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {/* Public Site Card */}
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader>
@@ -43,6 +43,35 @@ export default function Home() {
                   <Calendar className="mr-2 h-4 w-4" />
                   Coming Soon - Patient Portal
                 </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Questionnaire Card */}
+          <Card className="hover:shadow-lg transition-shadow border-green-200">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ClipboardList className="h-6 w-6 text-green-600" />
+                Questionnaire
+              </CardTitle>
+              <CardDescription>
+                Complete your dental assessment and personalized questionnaires
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="text-sm text-gray-600">
+                  • Fill out personalized questionnaires
+                  • Upload photos and medical information
+                  • Help us understand your dental needs
+                  • Complete assessment at your own pace
+                </div>
+                <Link href="/questionnaire">
+                  <Button className="w-full bg-green-600 hover:bg-green-700">
+                    <ClipboardList className="mr-2 h-4 w-4" />
+                    Start Questionnaire
+                  </Button>
+                </Link>
               </div>
             </CardContent>
           </Card>
