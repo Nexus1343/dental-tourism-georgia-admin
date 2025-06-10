@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import "../globals.css";
+import { MainLayout } from "@/components/layout/MainLayout";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,22 +14,18 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Dental Tourism Georgia",
-  description: "Premium dental care in Georgia - Discover world-class treatments at affordable prices",
+  title: "Questionnaire Admin - Dental Tourism Platform",
+  description: "Admin interface for managing dental tourism questionnaires",
 };
 
-export default function RootLayout({
+export default function AdminLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
-      </body>
-    </html>
+    <MainLayout>
+      {children}
+    </MainLayout>
   );
 }
