@@ -10,7 +10,8 @@ import {
   Users,
   Eye,
   Plus,
-  FolderOpen
+  FolderOpen,
+  UserCog
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -43,6 +44,16 @@ const navigation = [
     href: '/admin/clinics',
     icon: Building2,
     badge: null
+  },
+  {
+    name: 'Doctors',
+    href: '/admin/doctors',
+    icon: UserCog,
+    badge: null,
+    children: [
+      { name: 'All Doctors', href: '/admin/doctors', icon: FolderOpen },
+      { name: 'Create New', href: '/admin/doctors/create', icon: Plus },
+    ]
   },
   {
     name: 'Preview',
