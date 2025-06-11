@@ -39,23 +39,18 @@ export async function GET() {
       console.error('Error fetching clinics:', clinicsError);
     }
 
-    // Common dental specializations
+    // Specializations based on database enum values
     const specializations = [
-      'General Dentistry',
-      'Orthodontics',
-      'Oral Surgery',
-      'Endodontics',
-      'Periodontics',
-      'Prosthodontics',
-      'Pediatric Dentistry',
-      'Oral Pathology',
-      'Oral Radiology',
-      'Dental Implants',
-      'Cosmetic Dentistry',
-      'Restorative Dentistry',
-      'Preventive Dentistry',
-      'Emergency Dentistry',
-      'Dental Anesthesiology'
+      { value: 'general_dentist', label: 'General Dentistry' },
+      { value: 'orthodontist', label: 'Orthodontics' },
+      { value: 'oral_surgeon', label: 'Oral Surgery' },
+      { value: 'endodontist', label: 'Endodontics' },
+      { value: 'periodontist', label: 'Periodontics' },
+      { value: 'prosthodontist', label: 'Prosthodontics' },
+      { value: 'pediatric_dentist', label: 'Pediatric Dentistry' },
+      { value: 'oral_pathologist', label: 'Oral Pathology' },
+      { value: 'implantologist', label: 'Dental Implants' },
+      { value: 'cosmetic_dentist', label: 'Cosmetic Dentistry' }
     ];
 
     // Doctor status options (from the enum)

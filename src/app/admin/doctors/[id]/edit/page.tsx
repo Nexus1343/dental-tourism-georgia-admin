@@ -43,7 +43,10 @@ interface FormOptions {
     country: string | null
     status: string
   }>
-  specializations: string[]
+  specializations: Array<{
+    value: string
+    label: string
+  }>
   statusOptions: Array<{
     value: string
     label: string
@@ -191,11 +194,11 @@ export default function EditDoctorPage() {
     }
   }
 
-  const addSpecialization = (spec: string) => {
-    if (!formData.specializations.includes(spec)) {
+  const addSpecialization = (specValue: string) => {
+    if (!formData.specializations.includes(specValue)) {
       setFormData({
         ...formData,
-        specializations: [...formData.specializations, spec]
+        specializations: [...formData.specializations, specValue]
       })
     }
   }
@@ -241,6 +244,11 @@ export default function EditDoctorPage() {
     const newCertifications = [...formData.certifications]
     newCertifications[index] = { ...newCertifications[index], [field]: value }
     setFormData({ ...formData, certifications: newCertifications })
+  }
+
+  const getSpecializationLabel = (value: string) => {
+    const spec = options?.specializations.find(s => s.value === value)
+    return spec ? spec.label : value
   }
 
   if (initialLoading || !options) {
@@ -383,7 +391,7 @@ export default function EditDoctorPage() {
                   <div className="flex flex-wrap gap-2 mb-2">
                     {formData.specializations.map((spec) => (
                       <Badge key={spec} variant="default" className="flex items-center gap-1">
-                        {spec}
+                        {getSpecializationLabel(spec)}
                         <button
                           type="button"
                           onClick={() => removeSpecialization(spec)}
@@ -400,10 +408,10 @@ export default function EditDoctorPage() {
                     </SelectTrigger>
                     <SelectContent>
                       {options.specializations
-                        .filter(spec => !formData.specializations.includes(spec))
+                        .filter(spec => !formData.specializations.includes(spec.value))
                         .map((spec) => (
-                          <SelectItem key={spec} value={spec}>
-                            {spec}
+                          <SelectItem key={spec.value} value={spec.value}>
+                            {spec.label}
                           </SelectItem>
                         ))}
                     </SelectContent>

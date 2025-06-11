@@ -174,6 +174,22 @@ export default function DoctorsPage() {
     return `${first_name?.[0] || ''}${last_name?.[0] || ''}`.toUpperCase() || doctor.users.email[0].toUpperCase()
   }
 
+  const getSpecializationLabel = (value: string) => {
+    const specializationLabels: Record<string, string> = {
+      'general_dentist': 'General Dentistry',
+      'orthodontist': 'Orthodontics',
+      'oral_surgeon': 'Oral Surgery',
+      'endodontist': 'Endodontics',
+      'periodontist': 'Periodontics',
+      'prosthodontist': 'Prosthodontics',
+      'pediatric_dentist': 'Pediatric Dentistry',
+      'oral_pathologist': 'Oral Pathology',
+      'implantologist': 'Dental Implants',
+      'cosmetic_dentist': 'Cosmetic Dentistry'
+    }
+    return specializationLabels[value] || value
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -294,7 +310,7 @@ export default function DoctorsPage() {
                       <div className="flex flex-wrap gap-1">
                         {doctor.specializations.slice(0, 2).map((spec, index) => (
                           <Badge key={index} variant="outline" className="text-xs">
-                            {spec}
+                            {getSpecializationLabel(spec)}
                           </Badge>
                         ))}
                         {doctor.specializations.length > 2 && (
