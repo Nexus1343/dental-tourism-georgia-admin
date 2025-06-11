@@ -53,8 +53,13 @@ import {
   Loader2
 } from "lucide-react"
 import { toast } from "sonner"
-import { ClinicService } from "@/lib/database"
-import { Clinic, CreateClinic } from "@/types/database"
+import { ClinicService, QuestionnaireTemplateService, ClinicTemplateService } from "@/lib/database"
+import { Clinic, CreateClinic, QuestionnaireTemplate, ClinicQuestionnaireTemplate } from "@/types/database"
+
+// Extended interface for clinic templates with joined template data
+interface ClinicQuestionnaireTemplateWithTemplate extends ClinicQuestionnaireTemplate {
+  template: QuestionnaireTemplate
+}
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -118,6 +123,12 @@ export default function ClinicsPage() {
   const [loading, setLoading] = useState(true)
   const [createLoading, setCreateLoading] = useState(false)
   const [editLoading, setEditLoading] = useState(false)
+  const [showTemplateDialog, setShowTemplateDialog] = useState(false)
+  const [templateAssignmentClinic, setTemplateAssignmentClinic] = useState<Clinic | null>(null)
+  const [availableTemplates, setAvailableTemplates] = useState<QuestionnaireTemplate[]>([])
+  const [clinicTemplates, setClinicTemplates] = useState<ClinicQuestionnaireTemplateWithTemplate[]>([])
+  const [templateLoading, setTemplateLoading] = useState(false)
+  const [assignLoading, setAssignLoading] = useState(false)
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
@@ -140,10 +151,38 @@ export default function ClinicsPage() {
     mode: "onChange"
   })
 
+  // Load templates data
+  const loadTemplates = async () => {
+    try {
+      const response = await QuestionnaireTemplateService.getAll({
+        status: 'active',
+        limit: 100
+      })
+      setAvailableTemplates(response.data)
+    } catch (error) {
+      console.error('Error loading templates:', error)
+      toast.error('Failed to load templates')
+    }
+  }
+
+  const loadClinicTemplates = async (clinicId: string) => {
+    try {
+      setTemplateLoading(true)
+      const assignments = await ClinicTemplateService.getClinicTemplates(clinicId)
+      setClinicTemplates(assignments as ClinicQuestionnaireTemplateWithTemplate[])
+    } catch (error) {
+      console.error('Error loading clinic templates:', error)
+      toast.error('Failed to load clinic templates')
+    } finally {
+      setTemplateLoading(false)
+    }
+  }
+
   // Load clinics on component mount
   useEffect(() => {
     loadClinics()
     loadStats()
+    loadTemplates()
   }, [])
 
   const loadClinics = async () => {
@@ -409,9 +448,60 @@ export default function ClinicsPage() {
     }
   }
 
-  const handleAssignTemplates = (clinic: Clinic) => {
-    // TODO: Navigate to template assignment page
-    console.log('Assign templates to clinic:', clinic.id)
+  const handleAssignTemplates = async (clinic: Clinic) => {
+    setTemplateAssignmentClinic(clinic)
+    setShowTemplateDialog(true)
+    await loadClinicTemplates(clinic.id)
+  }
+
+  const handleAssignTemplate = async (templateId: string, isDefault: boolean = false) => {
+    if (!templateAssignmentClinic) return
+
+    try {
+      setAssignLoading(true)
+      
+      await ClinicTemplateService.assignTemplate(
+        templateAssignmentClinic.id,
+        templateId,
+        { isDefault }
+      )
+      
+      toast.success('Template assigned successfully!')
+      
+      // Reload clinic templates
+      await loadClinicTemplates(templateAssignmentClinic.id)
+      
+      // Reload stats to update template assignment count
+      loadStats()
+    } catch (error: any) {
+      console.error('Error assigning template:', error)
+      toast.error(error?.message || 'Failed to assign template')
+    } finally {
+      setAssignLoading(false)
+    }
+  }
+
+  const handleRemoveTemplate = async (assignmentId: string) => {
+    try {
+      setAssignLoading(true)
+      
+      await ClinicTemplateService.removeAssignment(assignmentId)
+      
+      toast.success('Template removed successfully!')
+      
+      // Reload clinic templates
+      if (templateAssignmentClinic) {
+        await loadClinicTemplates(templateAssignmentClinic.id)
+      }
+      
+      // Reload stats to update template assignment count
+      loadStats()
+    } catch (error: any) {
+      console.error('Error removing template:', error)
+      toast.error(error?.message || 'Failed to remove template')
+    } finally {
+      setAssignLoading(false)
+    }
   }
 
   return (
@@ -1317,6 +1407,140 @@ export default function ClinicsPage() {
               </DialogFooter>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Template Assignment Dialog */}
+      <Dialog open={showTemplateDialog} onOpenChange={setShowTemplateDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Manage Templates</DialogTitle>
+            <DialogDescription>
+              Assign questionnaire templates to {templateAssignmentClinic?.name}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Currently Assigned Templates */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Currently Assigned Templates</h3>
+              {templateLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
+              ) : clinicTemplates.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <p>No templates assigned to this clinic yet.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {clinicTemplates.map((assignment) => (
+                    <div key={assignment.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3">
+                          <FileText className="h-5 w-5 text-blue-600" />
+                          <div>
+                            <h4 className="font-medium">{assignment.template.name}</h4>
+                            <p className="text-sm text-gray-600">
+                              {assignment.template.description}
+                            </p>
+                            <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                              <span>Language: {assignment.template.language}</span>
+                              <span>Est. Time: {assignment.template.estimated_completion_minutes} min</span>
+                              {assignment.is_default && (
+                                <Badge variant="secondary" className="text-xs">Default</Badge>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleRemoveTemplate(assignment.id)}
+                        disabled={assignLoading}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        {assignLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                        Remove
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Available Templates to Assign */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Available Templates</h3>
+              {availableTemplates.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <p>No templates available for assignment.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {availableTemplates
+                    .filter(template => 
+                      !clinicTemplates.some(assignment => assignment.template_id === template.id)
+                    )
+                    .map((template) => (
+                      <div key={template.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3">
+                            <FileText className="h-5 w-5 text-green-600" />
+                            <div>
+                              <h4 className="font-medium">{template.name}</h4>
+                              <p className="text-sm text-gray-600">
+                                {template.description}
+                              </p>
+                              <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                                <span>Language: {template.language}</span>
+                                <span>Est. Time: {template.estimated_completion_minutes} min</span>
+                                <span>Pages: {template.total_pages}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleAssignTemplate(template.id, false)}
+                            disabled={assignLoading}
+                          >
+                            {assignLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                            Assign
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => handleAssignTemplate(template.id, true)}
+                            disabled={assignLoading}
+                          >
+                            {assignLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Star className="h-4 w-4" />}
+                            Set as Default
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowTemplateDialog(false)
+                setTemplateAssignmentClinic(null)
+                setClinicTemplates([])
+              }}
+            >
+              Close
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
