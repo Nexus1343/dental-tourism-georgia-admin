@@ -12,6 +12,16 @@ import type {
 export class UserService {
   
   /**
+   * Ensure admin client is available (server-side only)
+   */
+  private static ensureAdminClient() {
+    if (!supabaseAdmin) {
+      throw new Error('Admin operations are only available on the server-side')
+    }
+    return supabaseAdmin
+  }
+  
+  /**
    * Get users with filtering and pagination
    */
   static async getUsers(filters: UserFilters = {}): Promise<PaginatedResponse<User>> {
@@ -78,8 +88,10 @@ export class UserService {
    */
   static async createUser(userData: CreateUserData): Promise<ApiResponse<User>> {
     try {
+      const adminClient = this.ensureAdminClient()
+      
       // Step 1: Create user in Supabase Auth (using admin client)
-      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
         email: userData.email,
         password: userData.password,
         email_confirm: true
@@ -103,7 +115,7 @@ export class UserService {
         status: 'active' // Set new users as active
       }
 
-      const { data: profileResult, error: profileError } = await supabaseAdmin.rpc('update_user_profile', {
+      const { data: profileResult, error: profileError } = await adminClient.rpc('update_user_profile', {
         user_id: authData.user.id,
         profile_data: profileData
       })
