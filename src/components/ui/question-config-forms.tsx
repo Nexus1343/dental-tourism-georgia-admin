@@ -224,6 +224,17 @@ export function NumberInputConfig({ config, onChange }: QuestionConfigProps) {
   )
 }
 
+// Utility function to convert label to database-friendly value
+const labelToValue = (label: string): string => {
+  return label
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s]/g, '') // Remove special characters except spaces
+    .replace(/\s+/g, '_') // Replace spaces with underscores
+    .replace(/_{2,}/g, '_') // Replace multiple underscores with single
+    .replace(/^_|_$/g, '') // Remove leading/trailing underscores
+}
+
 // Choice Question Configuration
 export function ChoiceQuestionConfig({ questionType, config, onChange }: QuestionConfigProps) {
   const updateConfig = (key: string, value: any) => {
@@ -237,9 +248,14 @@ export function ChoiceQuestionConfig({ questionType, config, onChange }: Questio
     updateConfig('options', newOptions)
   }
 
-  const updateOption = (index: number, field: string, value: string) => {
+  const updateOption = (index: number, label: string) => {
     const newOptions = [...options]
-    newOptions[index] = { ...newOptions[index], [field]: value }
+    const value = labelToValue(label)
+    newOptions[index] = { 
+      ...newOptions[index], 
+      label: label,
+      value: value
+    }
     updateConfig('options', newOptions)
   }
 
@@ -291,7 +307,7 @@ export function ChoiceQuestionConfig({ questionType, config, onChange }: Questio
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label>Options</Label>
-              <Button onClick={addOption} size="sm">
+              <Button type="button" onClick={addOption} size="sm">
                 <Plus className="mr-2 h-4 w-4" />
                 Add Option
               </Button>
@@ -301,19 +317,20 @@ export function ChoiceQuestionConfig({ questionType, config, onChange }: Questio
               {options.map((option: any, index: number) => (
                 <div key={option.id || index} className="flex items-center gap-2 p-3 border rounded-lg">
                   <GripVertical className="h-4 w-4 text-gray-400" />
-                  <div className="flex-1 grid gap-2 md:grid-cols-2">
+                  <div className="flex-1">
                     <Input
-                      placeholder="Option label (what users see)"
+                      placeholder="e.g., Porcelain Veneers"
                       value={option.label || ''}
-                      onChange={(e) => updateOption(index, 'label', e.target.value)}
+                      onChange={(e) => updateOption(index, e.target.value)}
                     />
-                    <Input
-                      placeholder="Option value (stored data)"
-                      value={option.value || ''}
-                      onChange={(e) => updateOption(index, 'value', e.target.value)}
-                    />
+                    {option.value && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Database value: <code className="bg-gray-100 px-1 rounded">{option.value}</code>
+                      </p>
+                    )}
                   </div>
                   <Button
+                    type="button"
                     variant="ghost"
                     size="icon"
                     onClick={() => removeOption(index)}

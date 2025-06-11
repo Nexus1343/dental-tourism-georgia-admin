@@ -91,6 +91,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { QuestionnaireTemplate, QuestionnairePage, QuestionnaireQuestion, QuestionType } from "@/types/database"
 import { QuestionnaireTemplateService, QuestionnairePageService, QuestionnaireQuestionService } from "@/lib/database"
 import { toast } from "sonner"
+import { ChoiceQuestionConfig } from "@/components/ui/question-config-forms"
 
 // Question configuration schema
 const questionConfigSchema = z.object({
@@ -398,6 +399,7 @@ export default function QuestionEditorPage() {
   const [editingQuestion, setEditingQuestion] = useState<QuestionnaireQuestion | null>(null)
   const [activeTab, setActiveTab] = useState("questions")
   const [error, setError] = useState<string | null>(null)
+  const [questionConfig, setQuestionConfig] = useState<Record<string, any>>({})
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -517,6 +519,7 @@ export default function QuestionEditorPage() {
       // Open dialog for custom question
       questionForm.reset()
       setEditingQuestion(null)
+      setQuestionConfig({})
       setShowQuestionDialog(true)
     }
   }
@@ -533,6 +536,9 @@ export default function QuestionEditorPage() {
       validation_message: question.validation_message || "",
       question_group: question.question_group || ""
     })
+    
+    // Set the question config (options, etc.)
+    setQuestionConfig(question.options || {})
     setShowQuestionDialog(true)
   }
 
@@ -548,7 +554,8 @@ export default function QuestionEditorPage() {
           tooltip_text: data.tooltip_text,
           is_required: data.is_required,
           validation_message: data.validation_message,
-          question_group: data.question_group
+          question_group: data.question_group,
+          options: questionConfig
         })
         
         setQuestions(prev => prev.map(question => 
@@ -563,7 +570,7 @@ export default function QuestionEditorPage() {
           section: "general",
           question_text: data.question_text,
           question_type: data.question_type,
-          options: {},
+          options: questionConfig,
           validation_rules: {},
           is_required: data.is_required,
           order_index: Math.max(...questions.map(q => q.order_index), 0) + 1,
@@ -581,6 +588,7 @@ export default function QuestionEditorPage() {
       
       setShowQuestionDialog(false)
       setEditingQuestion(null)
+      setQuestionConfig({})
     } catch (err) {
       console.error("Error saving question:", err)
       toast.error("Failed to save question")
@@ -938,7 +946,7 @@ export default function QuestionEditorPage() {
 
       {/* Question Configuration Dialog */}
       <Dialog open={showQuestionDialog} onOpenChange={setShowQuestionDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingQuestion ? "Edit Question" : "Add New Question"}
@@ -948,7 +956,7 @@ export default function QuestionEditorPage() {
             </DialogDescription>
           </DialogHeader>
           
-          <form onSubmit={questionForm.handleSubmit(handleSaveQuestion)} className="space-y-4">
+          <form onSubmit={questionForm.handleSubmit(handleSaveQuestion)} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="question_text">Question Text *</Label>
               <Textarea
@@ -967,7 +975,11 @@ export default function QuestionEditorPage() {
                 <Label htmlFor="question_type">Question Type *</Label>
                 <Select 
                   value={questionForm.watch("question_type")} 
-                  onValueChange={(value) => questionForm.setValue("question_type", value as QuestionType)}
+                  onValueChange={(value) => {
+                    questionForm.setValue("question_type", value as QuestionType)
+                    // Reset question config when type changes
+                    setQuestionConfig({})
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select question type" />
@@ -1001,6 +1013,17 @@ export default function QuestionEditorPage() {
                 />
               </div>
             </div>
+
+            {/* Choice Options Configuration */}
+            {(questionForm.watch("question_type") === "single_choice" || questionForm.watch("question_type") === "multiple_choice") && (
+              <div className="space-y-4">
+                <ChoiceQuestionConfig
+                  questionType={questionForm.watch("question_type")}
+                  config={questionConfig}
+                  onChange={setQuestionConfig}
+                />
+              </div>
+            )}
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
@@ -1055,7 +1078,10 @@ export default function QuestionEditorPage() {
               <Button 
                 type="button" 
                 variant="outline" 
-                onClick={() => setShowQuestionDialog(false)}
+                onClick={() => {
+                  setShowQuestionDialog(false)
+                  setQuestionConfig({})
+                }}
               >
                 Cancel
               </Button>

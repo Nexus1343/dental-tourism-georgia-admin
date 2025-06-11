@@ -8,6 +8,7 @@ import {
   CreateQuestionnaireTemplate,
   CreateQuestionnairePage,
   CreateQuestionnaireQuestion,
+  CreateClinic,
   QuestionnaireTemplateWithDetails,
   PaginatedResponse,
   ApiResponse
@@ -423,6 +424,7 @@ export class QuestionnaireQuestionService {
 export class ClinicService {
   static async getAll(options?: {
     search?: string
+    status?: string
     page?: number
     limit?: number
   }): Promise<PaginatedResponse<Clinic>> {
@@ -431,7 +433,11 @@ export class ClinicService {
       .select('*', { count: 'exact' })
 
     if (options?.search) {
-      query = query.or(`name.ilike.%${options.search}%,city.ilike.%${options.search}%`)
+      query = query.or(`name.ilike.%${options.search}%,city.ilike.%${options.search}%,description.ilike.%${options.search}%`)
+    }
+
+    if (options?.status && options.status !== 'all') {
+      query = query.eq('status', options.status)
     }
 
     const page = options?.page || 1
@@ -463,6 +469,142 @@ export class ClinicService {
 
     if (error) throw error
     return data
+  }
+
+  static async create(clinic: CreateClinic): Promise<Clinic> {
+    const clinicData = {
+      ...clinic,
+      accreditations: clinic.accreditations || [],
+      facilities: clinic.facilities || [],
+      languages_spoken: clinic.languages_spoken || [],
+      images: clinic.images || [],
+      seo_keywords: clinic.seo_keywords || [],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }
+
+    const { data, error } = await supabase
+      .from('clinics')
+      .insert([clinicData])
+      .select()
+      .single()
+
+    if (error) throw error
+    return data
+  }
+
+  static async update(id: string, updates: Partial<CreateClinic>): Promise<Clinic> {
+    const updateData = {
+      ...updates,
+      updated_at: new Date().toISOString()
+    }
+
+    const { data, error } = await supabase
+      .from('clinics')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) throw error
+    return data
+  }
+
+  static async delete(id: string): Promise<void> {
+    // First, deactivate any template assignments
+    await supabase
+      .from('clinic_questionnaire_templates')
+      .update({ is_active: false })
+      .eq('clinic_id', id)
+
+    // Then delete the clinic
+    const { error } = await supabase
+      .from('clinics')
+      .delete()
+      .eq('id', id)
+
+    if (error) throw error
+  }
+
+  static async updateStatus(id: string, status: 'active' | 'inactive' | 'pending_approval' | 'suspended'): Promise<Clinic> {
+    const { data, error } = await supabase
+      .from('clinics')
+      .update({ 
+        status,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) throw error
+    return data
+  }
+
+  static async getBySlug(slug: string): Promise<Clinic | null> {
+    const { data, error } = await supabase
+      .from('clinics')
+      .select('*')
+      .eq('slug', slug)
+      .single()
+
+    if (error) {
+      if (error.code === 'PGRST116') return null // No rows returned
+      throw error
+    }
+    return data
+  }
+
+  static async checkSlugExists(slug: string, excludeId?: string): Promise<boolean> {
+    let query = supabase
+      .from('clinics')
+      .select('id')
+      .eq('slug', slug)
+
+    if (excludeId) {
+      query = query.neq('id', excludeId)
+    }
+
+    const { data, error } = await query
+
+    if (error) throw error
+    return (data?.length || 0) > 0
+  }
+
+  static async getStatistics(): Promise<{
+    total: number
+    active: number
+    inactive: number
+    pending: number
+    totalTemplateAssignments: number
+  }> {
+    // Get clinic counts by status
+    const { data: clinics, error: clinicsError } = await supabase
+      .from('clinics')
+      .select('status')
+
+    if (clinicsError) throw clinicsError
+
+    // Get total template assignments
+    const { data: assignments, error: assignmentsError } = await supabase
+      .from('clinic_questionnaire_templates')
+      .select('id')
+      .eq('is_active', true)
+
+    if (assignmentsError) throw assignmentsError
+
+    const statusCounts = clinics?.reduce((acc, clinic) => {
+      acc[clinic.status] = (acc[clinic.status] || 0) + 1
+      return acc
+    }, {} as Record<string, number>) || {}
+
+    return {
+      total: clinics?.length || 0,
+      active: statusCounts['active'] || 0,
+      inactive: statusCounts['inactive'] || 0,
+      pending: statusCounts['pending'] || 0,
+      totalTemplateAssignments: assignments?.length || 0
+    }
   }
 }
 

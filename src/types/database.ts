@@ -81,7 +81,7 @@ export interface Clinic {
   id: string
   name: string
   slug: string
-  status: string
+  status: 'active' | 'inactive' | 'pending_approval' | 'suspended'
   description?: string
   address?: string
   city?: string
@@ -171,6 +171,30 @@ export interface CreateQuestionnaireQuestion {
   question_group?: string
   validation_message?: string
   tooltip_text?: string
+}
+
+export interface CreateClinic {
+  name: string
+  slug: string
+  status: 'active' | 'inactive' | 'pending_approval' | 'suspended'
+  description?: string
+  address?: string
+  city?: string
+  country: string
+  phone?: string
+  email?: string
+  website?: string
+  established_year?: number
+  license_number?: string
+  accreditations?: string[]
+  facilities?: string[]
+  languages_spoken?: string[]
+  operating_hours?: Record<string, any>
+  coordinates?: { x: number; y: number }
+  images?: string[]
+  seo_title?: string
+  seo_description?: string
+  seo_keywords?: string[]
 }
 
 // API Response types
