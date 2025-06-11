@@ -136,3 +136,23 @@
     -webkit-line-clamp: 3;
   }
 }
+
+@layer components {
+  /* Ensure form containers don't cause layout overflow */
+  .form-container {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  
+  /* Prevent textarea and input expansion from breaking layout */
+  textarea, input {
+    max-width: 100%;
+    resize: vertical;
+  }
+  
+  /* Ensure cards and content areas stay within bounds */
+  [role="main"] {
+    min-height: 0;
+    flex: 1;
+  }
+}

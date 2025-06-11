@@ -239,7 +239,7 @@ export default function EditTreatmentPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-full overflow-x-hidden">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
@@ -253,7 +253,7 @@ export default function EditTreatmentPage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6 form-container">
         {/* Basic Information */}
         <Card>
           <CardHeader>

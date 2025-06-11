@@ -39,12 +39,14 @@ export function MainLayout({ children, className }: MainLayoutProps) {
         {/* Scrollable Main content */}
         <main 
           className={cn(
-            "flex-1 overflow-y-auto md:ml-0",
+            "flex-1 overflow-hidden md:ml-0",
             className
           )}
         >
-          <div className="container mx-auto p-6">
-            {children}
+          <div className="h-full overflow-y-auto">
+            <div className="container mx-auto p-6 min-h-full">
+              {children}
+            </div>
           </div>
         </main>
       </div>

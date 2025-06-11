@@ -222,7 +222,7 @@ export default function EditTreatmentPackagePage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-full overflow-x-hidden">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
@@ -239,7 +239,7 @@ export default function EditTreatmentPackagePage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6 form-container">
         {/* Basic Information */}
         <Card>
           <CardHeader>
@@ -311,7 +311,7 @@ export default function EditTreatmentPackagePage() {
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
                   {treatments.map((treatment) => (
                     <div
                       key={treatment.id}
