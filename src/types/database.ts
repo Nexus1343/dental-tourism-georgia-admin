@@ -271,6 +271,71 @@ export interface TreatmentFilters {
 }
 
 // ============================================================================
+// TREATMENT PACKAGE TYPES
+// ============================================================================
+
+export interface TreatmentPackage {
+  id: string
+  clinic_id?: string
+  name: string
+  description?: string
+  treatment_ids: string[]
+  total_base_price: number
+  discount_percentage?: number
+  min_duration_days?: number
+  max_duration_days?: number
+  includes_accommodation: boolean
+  includes_transportation: boolean
+  includes_tourism: boolean
+  package_benefits?: string[]
+  terms_and_conditions?: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface CreateTreatmentPackage {
+  clinic_id?: string
+  name: string
+  description?: string
+  treatment_ids: string[]
+  total_base_price: number
+  discount_percentage?: number
+  min_duration_days?: number
+  max_duration_days?: number
+  includes_accommodation?: boolean
+  includes_transportation?: boolean
+  includes_tourism?: boolean
+  package_benefits?: string[]
+  terms_and_conditions?: string
+  is_active?: boolean
+}
+
+export interface UpdateTreatmentPackage extends CreateTreatmentPackage {}
+
+export interface TreatmentPackageFilters {
+  clinic_id?: string
+  status?: 'active' | 'inactive'
+  includes_accommodation?: boolean
+  includes_transportation?: boolean
+  includes_tourism?: boolean
+  min_price?: number
+  max_price?: number
+  search?: string
+  page?: number
+  limit?: number
+  sort_by?: string
+  sort_order?: 'asc' | 'desc'
+}
+
+// Extended type with relations
+export interface TreatmentPackageWithDetails extends TreatmentPackage {
+  treatments?: Treatment[]
+  clinic?: Clinic
+  final_price?: number
+}
+
+// ============================================================================
 // USER MANAGEMENT TYPES
 // ============================================================================
 
