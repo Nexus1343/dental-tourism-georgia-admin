@@ -17,6 +17,7 @@ import {
 import { DentalPhotoUploadConfig } from "./dental-photo-config"
 import { DentalPhotoGridConfig } from "./dental-photo-grid"
 import { DentalPhotoManager } from "./dental-photo-manager"
+import { PhotoExampleUpload } from "./photo-example-upload"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
   Plus,
@@ -499,13 +500,22 @@ export function RatingConfig({ config, onChange }: QuestionConfigProps) {
   )
 }
 
-// File Upload Configuration
-export function FileUploadConfig({ config, onChange }: QuestionConfigProps) {
+// File Upload Configuration  
+interface FileUploadConfigProps extends QuestionConfigProps {
+  questionId?: string
+}
+
+export function FileUploadConfig({ config, onChange, questionId }: FileUploadConfigProps) {
   const updateConfig = (key: string, value: any) => {
     onChange({ ...config, [key]: value })
   }
 
   const allowedTypes = config.allowed_types || []
+  const isImageUpload = allowedTypes.some((type: string) => type.startsWith('image/'))
+
+  const handleExamplePhotoChange = (photo: { url: string; path: string; instructions?: string } | null) => {
+    updateConfig('example_photo', photo)
+  }
 
   const toggleFileType = (type: string) => {
     const currentTypes = [...allowedTypes]
@@ -622,12 +632,27 @@ export function FileUploadConfig({ config, onChange }: QuestionConfigProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Example Photo Section - Only show for image uploads */}
+      {isImageUpload && (
+        <PhotoExampleUpload
+          questionId={questionId}
+          examplePhoto={config.example_photo}
+          onExamplePhotoChange={handleExamplePhotoChange}
+          title="Example Image"
+          description="Upload an example image to show users what kind of file they should upload."
+        />
+      )}
     </div>
   )
 }
 
 // Main Question Configuration Component
-export function QuestionConfigForm({ questionType, config, onChange }: QuestionConfigProps) {
+interface QuestionConfigFormProps extends QuestionConfigProps {
+  questionId?: string
+}
+
+export function QuestionConfigForm({ questionType, config, onChange, questionId }: QuestionConfigFormProps) {
   const renderConfigForm = () => {
     switch (questionType) {
       case 'text':
@@ -651,10 +676,10 @@ export function QuestionConfigForm({ questionType, config, onChange }: QuestionC
         return <RatingConfig questionType={questionType} config={config} onChange={onChange} />
       
       case 'file_upload':
-        return <FileUploadConfig questionType={questionType} config={config} onChange={onChange} />
+        return <FileUploadConfig questionType={questionType} config={config} onChange={onChange} questionId={questionId} />
       
       case 'photo_upload':
-        return <DentalPhotoUploadConfiguration questionType={questionType} config={config} onChange={onChange} />
+        return <DentalPhotoUploadConfiguration questionType={questionType} config={config} onChange={onChange} questionId={questionId} />
       
       case 'photo_grid':
         return <PhotoGridConfiguration questionType={questionType} config={config} onChange={onChange} />
@@ -680,10 +705,27 @@ export function QuestionConfigForm({ questionType, config, onChange }: QuestionC
 }
 
 // Dental Photo Upload Configuration - Enhanced for dental tourism
-export function DentalPhotoUploadConfiguration({ config, onChange }: QuestionConfigProps) {
+interface DentalPhotoUploadConfigurationProps extends QuestionConfigProps {
+  questionId?: string
+}
+
+export function DentalPhotoUploadConfiguration({ config, onChange, questionId }: DentalPhotoUploadConfigurationProps) {
+  const handleExamplePhotoChange = (photo: { url: string; path: string; instructions?: string } | null) => {
+    onChange({ ...config, example_photo: photo })
+  }
+
   return (
     <div className="space-y-6">
       <DentalPhotoUploadConfig config={config} onChange={onChange} />
+      
+      {/* Example Photo Section */}
+      <PhotoExampleUpload
+        questionId={questionId}
+        examplePhoto={config.example_photo}
+        onExamplePhotoChange={handleExamplePhotoChange}
+        title="Example Dental Photo"
+        description="Upload an example photo to show users the proper dental photography technique, angle, and lighting."
+      />
     </div>
   )
 }

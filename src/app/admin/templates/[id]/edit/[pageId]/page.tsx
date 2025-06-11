@@ -4,19 +4,10 @@ import React, { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+
 import { Badge } from "@/components/ui/badge"
 import { Breadcrumbs } from "@/components/ui/breadcrumbs"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,13 +15,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
   FileText, 
@@ -64,9 +49,7 @@ import {
   AlertCircle
 } from "lucide-react"
 import Link from "next/link"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
+
 
 import {
   DndContext,
@@ -91,25 +74,9 @@ import { CSS } from '@dnd-kit/utilities'
 import { QuestionnaireTemplate, QuestionnairePage, QuestionnaireQuestion, QuestionType } from "@/types/database"
 import { QuestionnaireTemplateService, QuestionnairePageService, QuestionnaireQuestionService } from "@/lib/database"
 import { toast } from "sonner"
-import { ChoiceQuestionConfig } from "@/components/ui/question-config-forms"
 
-// Question configuration schema
-const questionConfigSchema = z.object({
-  question_text: z.string().min(1, "Question text is required"),
-  question_type: z.enum([
-    "text", "textarea", "email", "phone", "number", "date", "date_picker",
-    "single_choice", "multiple_choice", "checkbox", "file_upload", "photo_upload",
-    "photo_grid", "rating", "slider", "pain_scale", "tooth_chart", "budget_range"
-  ]),
-  help_text: z.string().optional(),
-  placeholder_text: z.string().optional(),
-  tooltip_text: z.string().optional(),
-  is_required: z.boolean(),
-  validation_message: z.string().optional(),
-  question_group: z.string().optional()
-})
 
-type QuestionConfigData = z.infer<typeof questionConfigSchema>
+
 
 
 
@@ -395,11 +362,8 @@ export default function QuestionEditorPage() {
   const [questions, setQuestions] = useState<QuestionnaireQuestion[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [showQuestionDialog, setShowQuestionDialog] = useState(false)
-  const [editingQuestion, setEditingQuestion] = useState<QuestionnaireQuestion | null>(null)
   const [activeTab, setActiveTab] = useState("questions")
   const [error, setError] = useState<string | null>(null)
-  const [questionConfig, setQuestionConfig] = useState<Record<string, any>>({})
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -407,20 +371,6 @@ export default function QuestionEditorPage() {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   )
-
-  const questionForm = useForm<QuestionConfigData>({
-    resolver: zodResolver(questionConfigSchema),
-    defaultValues: {
-      question_text: "",
-      question_type: "text",
-      help_text: "",
-      placeholder_text: "",
-      tooltip_text: "",
-      is_required: false,
-      validation_message: "",
-      question_group: ""
-    }
-  })
 
   useEffect(() => {
     const fetchData = async () => {
@@ -509,91 +459,24 @@ export default function QuestionEditorPage() {
           conditional_logic: {}
         })
         
-        setQuestions(prev => [...prev, newQuestion])
-        toast.success("Question added successfully")
+        // Navigate to edit the new question
+        router.push(`/admin/templates/${params.id}/edit/${params.pageId}/question/${newQuestion.id}`)
       } catch (err) {
         console.error("Error adding question:", err)
         toast.error("Failed to add question")
       }
     } else {
-      // Open dialog for custom question
-      questionForm.reset()
-      setEditingQuestion(null)
-      setQuestionConfig({})
-      setShowQuestionDialog(true)
+      // Navigate to create a new question page
+      router.push(`/admin/templates/${params.id}/edit/${params.pageId}/question/new`)
     }
   }
 
   const handleEditQuestion = (question: QuestionnaireQuestion) => {
-    setEditingQuestion(question)
-    questionForm.reset({
-      question_text: question.question_text,
-      question_type: question.question_type,
-      help_text: question.help_text || "",
-      placeholder_text: question.placeholder_text || "",
-      tooltip_text: question.tooltip_text || "",
-      is_required: question.is_required,
-      validation_message: question.validation_message || "",
-      question_group: question.question_group || ""
-    })
-    
-    // Set the question config (options, etc.)
-    setQuestionConfig(question.options || {})
-    setShowQuestionDialog(true)
+    // Navigate to the dedicated question editor page
+    router.push(`/admin/templates/${params.id}/edit/${params.pageId}/question/${question.id}`)
   }
 
-  const handleSaveQuestion = async (data: QuestionConfigData) => {
-    try {
-      if (editingQuestion) {
-        // Update existing question
-        const updatedQuestion = await QuestionnaireQuestionService.update(editingQuestion.id, {
-          question_text: data.question_text,
-          question_type: data.question_type,
-          help_text: data.help_text,
-          placeholder_text: data.placeholder_text,
-          tooltip_text: data.tooltip_text,
-          is_required: data.is_required,
-          validation_message: data.validation_message,
-          question_group: data.question_group,
-          options: questionConfig
-        })
-        
-        setQuestions(prev => prev.map(question => 
-          question.id === editingQuestion.id ? updatedQuestion : question
-        ))
-        toast.success("Question updated successfully")
-      } else {
-        // Add new question
-        const newQuestion = await QuestionnaireQuestionService.create({
-          template_id: params.id as string,
-          page_id: params.pageId as string,
-          section: "general",
-          question_text: data.question_text,
-          question_type: data.question_type,
-          options: questionConfig,
-          validation_rules: {},
-          is_required: data.is_required,
-          order_index: Math.max(...questions.map(q => q.order_index), 0) + 1,
-          help_text: data.help_text,
-          placeholder_text: data.placeholder_text,
-          tooltip_text: data.tooltip_text,
-          validation_message: data.validation_message,
-          question_group: data.question_group,
-          conditional_logic: {}
-        })
-        
-        setQuestions(prev => [...prev, newQuestion])
-        toast.success("Question created successfully")
-      }
-      
-      setShowQuestionDialog(false)
-      setEditingQuestion(null)
-      setQuestionConfig({})
-    } catch (err) {
-      console.error("Error saving question:", err)
-      toast.error("Failed to save question")
-    }
-  }
+
 
   const handleDeleteQuestion = async (questionId: string) => {
     try {
@@ -944,154 +827,7 @@ export default function QuestionEditorPage() {
         </TabsContent>
       </Tabs>
 
-      {/* Question Configuration Dialog */}
-      <Dialog open={showQuestionDialog} onOpenChange={setShowQuestionDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {editingQuestion ? "Edit Question" : "Add New Question"}
-            </DialogTitle>
-            <DialogDescription>
-              Configure the question text, type, and properties.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <form onSubmit={questionForm.handleSubmit(handleSaveQuestion)} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="question_text">Question Text *</Label>
-              <Textarea
-                id="question_text"
-                placeholder="e.g., What is your name?"
-                rows={2}
-                {...questionForm.register("question_text")}
-              />
-              {questionForm.formState.errors.question_text && (
-                <p className="text-sm text-red-600">{questionForm.formState.errors.question_text.message}</p>
-              )}
-            </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="question_type">Question Type *</Label>
-                <Select 
-                  value={questionForm.watch("question_type")} 
-                  onValueChange={(value) => {
-                    questionForm.setValue("question_type", value as QuestionType)
-                    // Reset question config when type changes
-                    setQuestionConfig({})
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select question type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(questionCategories).map(([category, types]) => (
-                      <div key={category}>
-                        <div className="px-2 py-1 text-xs font-medium text-gray-500 uppercase tracking-wide">
-                          {category}
-                        </div>
-                        {types.map((type) => (
-                          <SelectItem key={type.type} value={type.type}>
-                            <div className="flex items-center gap-2">
-                              <type.icon className="h-4 w-4" />
-                              {type.name}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </div>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="question_group">Question Group</Label>
-                <Input
-                  id="question_group"
-                  placeholder="e.g., personal_info"
-                  {...questionForm.register("question_group")}
-                />
-              </div>
-            </div>
-
-            {/* Choice Options Configuration */}
-            {(questionForm.watch("question_type") === "single_choice" || questionForm.watch("question_type") === "multiple_choice") && (
-              <div className="space-y-4">
-                <ChoiceQuestionConfig
-                  questionType={questionForm.watch("question_type")}
-                  config={questionConfig}
-                  onChange={setQuestionConfig}
-                />
-              </div>
-            )}
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="placeholder_text">Placeholder Text</Label>
-                <Input
-                  id="placeholder_text"
-                  placeholder="e.g., Enter your name..."
-                  {...questionForm.register("placeholder_text")}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="tooltip_text">Tooltip Text</Label>
-                <Input
-                  id="tooltip_text"
-                  placeholder="Additional help text..."
-                  {...questionForm.register("tooltip_text")}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="help_text">Help Text</Label>
-              <Textarea
-                id="help_text"
-                placeholder="Additional instructions for the question..."
-                rows={2}
-                {...questionForm.register("help_text")}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="validation_message">Custom Validation Message</Label>
-              <Input
-                id="validation_message"
-                placeholder="Custom error message..."
-                {...questionForm.register("validation_message")}
-              />
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="is_required"
-                {...questionForm.register("is_required")}
-                className="rounded"
-              />
-              <Label htmlFor="is_required">Required Question</Label>
-            </div>
-
-            <DialogFooter>
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => {
-                  setShowQuestionDialog(false)
-                  setQuestionConfig({})
-                }}
-              >
-                Cancel
-              </Button>
-              <Button type="submit">
-                {editingQuestion ? "Update Question" : "Add Question"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 } 

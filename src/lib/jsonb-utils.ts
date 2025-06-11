@@ -38,6 +38,7 @@ export interface PhotoType {
   description: string
   required: boolean
   exampleImage?: string
+  exampleImagePath?: string
   instructions?: string
 }
 
