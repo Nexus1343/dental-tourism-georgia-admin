@@ -11,7 +11,8 @@ import {
   Eye,
   Plus,
   FolderOpen,
-  UserCog
+  UserCog,
+  Stethoscope
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -53,6 +54,16 @@ const navigation = [
     children: [
       { name: 'All Doctors', href: '/admin/doctors', icon: FolderOpen },
       { name: 'Create New', href: '/admin/doctors/create', icon: Plus },
+    ]
+  },
+  {
+    name: 'Treatments',
+    href: '/admin/treatments',
+    icon: Stethoscope,
+    badge: null,
+    children: [
+      { name: 'All Treatments', href: '/admin/treatments', icon: FolderOpen },
+      { name: 'Create New', href: '/admin/treatments/create', icon: Plus },
     ]
   },
   {

@@ -198,6 +198,79 @@ export interface CreateClinic {
 }
 
 // ============================================================================
+// TREATMENT TYPES
+// ============================================================================
+
+export type TreatmentCategory = 
+  | 'preventive'
+  | 'restorative'
+  | 'cosmetic'
+  | 'orthodontic'
+  | 'surgical'
+  | 'periodontal'
+  | 'endodontic'
+  | 'prosthodontic'
+  | 'pediatric'
+  | 'emergency'
+
+export interface Treatment {
+  id: string
+  name: string
+  slug: string
+  category: TreatmentCategory
+  description?: string
+  procedure_details?: string
+  duration_minutes?: number
+  recovery_time_days?: number
+  anesthesia_required: boolean
+  requirements: string[]
+  contraindications: string[]
+  benefits: string[]
+  risks: string[]
+  aftercare_instructions?: string
+  images: Record<string, any>[]
+  seo_title?: string
+  seo_description?: string
+  seo_keywords: string[]
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface CreateTreatment {
+  name: string
+  slug?: string
+  category: TreatmentCategory
+  description?: string
+  procedure_details?: string
+  duration_minutes?: number
+  recovery_time_days?: number
+  anesthesia_required?: boolean
+  requirements?: string[]
+  contraindications?: string[]
+  benefits?: string[]
+  risks?: string[]
+  aftercare_instructions?: string
+  images?: Record<string, any>[]
+  seo_title?: string
+  seo_description?: string
+  seo_keywords?: string[]
+  is_active?: boolean
+}
+
+export interface UpdateTreatment extends CreateTreatment {}
+
+export interface TreatmentFilters {
+  category?: TreatmentCategory
+  status?: 'active' | 'inactive'
+  search?: string
+  page?: number
+  limit?: number
+  sort_by?: string
+  sort_order?: 'asc' | 'desc'
+}
+
+// ============================================================================
 // USER MANAGEMENT TYPES
 // ============================================================================
 
