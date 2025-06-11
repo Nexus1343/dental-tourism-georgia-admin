@@ -71,7 +71,11 @@ const navigation = [
     name: 'Users',
     href: '/admin/users',
     icon: Users,
-    badge: null
+    badge: null,
+    children: [
+      { name: 'All Users', href: '/admin/users', icon: FolderOpen },
+      { name: 'Create User', href: '/admin/users/create', icon: Plus },
+    ]
   },
   {
     name: 'Settings',

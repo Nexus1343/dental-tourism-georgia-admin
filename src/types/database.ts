@@ -197,6 +197,57 @@ export interface CreateClinic {
   seo_keywords?: string[]
 }
 
+// ============================================================================
+// USER MANAGEMENT TYPES
+// ============================================================================
+
+export type UserRole = 'super_admin' | 'clinic_admin' | 'doctor' | 'marketing_team' | 'operations_team' | 'patient'
+export type UserStatus = 'active' | 'inactive' | 'pending' | 'suspended'
+
+export interface User {
+  id: string
+  email: string
+  role: UserRole
+  status: UserStatus
+  first_name?: string
+  last_name?: string
+  phone?: string
+  preferred_language: string
+  created_at: string
+  updated_at: string
+  last_login_at?: string
+  metadata: Record<string, any>
+}
+
+export interface CreateUserData {
+  email: string
+  password: string
+  role: UserRole
+  first_name?: string
+  last_name?: string
+  phone?: string
+  preferred_language?: string
+  clinic_id?: string // For clinic_admin role
+}
+
+export interface UpdateUserData {
+  first_name?: string
+  last_name?: string
+  phone?: string
+  preferred_language?: string
+  role?: UserRole
+  status?: UserStatus
+  metadata?: Record<string, any>
+}
+
+export interface UserFilters {
+  role?: UserRole
+  status?: UserStatus
+  search?: string
+  page?: number
+  pageSize?: number
+}
+
 // API Response types
 export interface ApiResponse<T> {
   data?: T
@@ -210,4 +261,17 @@ export interface PaginatedResponse<T> {
   page: number
   limit: number
   totalPages: number
+}
+
+// Database function response type (matches our SQL functions)
+export interface DatabaseResponse<T> {
+  success: boolean
+  data?: T
+  error?: string
+  pagination?: {
+    page: number
+    page_size: number
+    total_count: number
+    total_pages: number
+  }
 } 
