@@ -273,7 +273,7 @@ function SortableQuestionItem({ question, onEdit, onDelete, onDuplicate }: {
     <div
       ref={setNodeRef}
       style={style}
-      className="bg-white border rounded-lg p-4 hover:shadow-md transition-shadow"
+      className="bg-white border rounded-lg p-4 hover:shadow-md transition-shadow card-interactive"
     >
       <div className="flex items-start gap-3">
         {/* Drag Handle */}

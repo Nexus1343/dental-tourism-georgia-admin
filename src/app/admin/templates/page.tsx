@@ -262,7 +262,7 @@ export default function TemplatesPage() {
       {!loading && !error && (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredTemplates.map((template) => (
-          <Card key={template.id} className="relative group hover:shadow-md transition-shadow">
+          <Card key={template.id} className="relative group hover:shadow-md transition-shadow card-interactive">
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
                 <div className="space-y-1 flex-1">

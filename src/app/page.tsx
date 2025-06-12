@@ -21,7 +21,7 @@ export default function Home() {
         {/* Main Content Grid */}
         <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {/* Public Site Card */}
-          <Card className="hover:shadow-lg transition-shadow">
+          <Card className="hover:shadow-lg transition-shadow card-interactive">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-6 w-6 text-blue-600" />
@@ -48,7 +48,7 @@ export default function Home() {
           </Card>
 
           {/* Questionnaire Card */}
-          <Card className="hover:shadow-lg transition-shadow border-green-200">
+          <Card className="hover:shadow-lg transition-shadow border-green-200 card-interactive">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <ClipboardList className="h-6 w-6 text-green-600" />
@@ -77,7 +77,7 @@ export default function Home() {
           </Card>
 
           {/* Admin Interface Card */}
-          <Card className="hover:shadow-lg transition-shadow border-blue-200">
+          <Card className="hover:shadow-lg transition-shadow border-blue-200 card-interactive">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Settings className="h-6 w-6 text-blue-600" />

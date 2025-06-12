@@ -119,6 +119,35 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Cursor pointer for interactive elements */
+  button,
+  [role="button"],
+  [data-slot="button"],
+  [data-slot="dropdown-menu-trigger"],
+  [data-slot="dropdown-menu-item"],
+  [data-slot="dialog-trigger"],
+  [data-slot="dialog-close"],
+  [data-slot="accordion-trigger"],
+  [data-slot="select-trigger"],
+  [data-slot="badge"] a,
+  a,
+  label[for],
+  input[type="checkbox"],
+  input[type="radio"],
+  [tabindex="0"]:not(input):not(textarea),
+  .cursor-pointer {
+    cursor: pointer;
+  }
+  
+  /* Ensure disabled elements don't show pointer cursor */
+  button:disabled,
+  [role="button"]:disabled,
+  [data-slot="button"]:disabled,
+  [aria-disabled="true"],
+  .pointer-events-none {
+    cursor: default !important;
+  }
 }
 
 @layer utilities {
@@ -154,5 +183,46 @@
   [role="main"] {
     min-height: 0;
     flex: 1;
+  }
+  
+  /* Only specifically marked interactive cards should have pointer cursor */
+  .card-interactive {
+    cursor: pointer;
+  }
+  
+  /* Dropdown menu items should have pointer cursor */
+  [data-slot="dropdown-menu-item"] {
+    cursor: pointer;
+  }
+  
+  /* Links inside buttons should inherit pointer cursor */
+  button a,
+  [data-slot="button"] a {
+    cursor: inherit;
+  }
+  
+  /* Form containers should NOT have pointer cursor */
+  form,
+  .form-container,
+  [data-slot="card"] {
+    cursor: default;
+  }
+  
+  /* But interactive elements within forms should still have pointer cursor */
+  form button,
+  form [role="button"],
+  form a,
+  form label[for],
+  form input[type="checkbox"],
+  form input[type="radio"],
+  form input[type="file"],
+  .form-container button,
+  .form-container [role="button"],
+  .form-container a,
+  .form-container label[for],
+  .form-container input[type="checkbox"],
+  .form-container input[type="radio"],
+  .form-container input[type="file"] {
+    cursor: pointer;
   }
 }

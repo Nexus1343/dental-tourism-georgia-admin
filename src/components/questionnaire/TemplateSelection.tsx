@@ -209,7 +209,7 @@ export function TemplateSelection() {
       {filteredTemplates.length > 0 && (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {filteredTemplates.map((template) => (
-        <Card key={template.id} className="hover:shadow-lg transition-shadow border-green-200">
+        <Card key={template.id} className="hover:shadow-lg transition-shadow border-green-200 card-interactive">
           <CardHeader>
             <CardTitle className="flex items-start justify-between">
               <span className="text-lg">{template.name}</span>

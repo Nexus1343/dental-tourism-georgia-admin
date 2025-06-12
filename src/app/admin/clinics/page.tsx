@@ -627,7 +627,7 @@ export default function ClinicsPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredClinics.map((clinic) => (
-            <Card key={clinic.id} className="cursor-pointer hover:shadow-lg transition-shadow">
+            <Card key={clinic.id} className="hover:shadow-lg transition-shadow card-interactive">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
