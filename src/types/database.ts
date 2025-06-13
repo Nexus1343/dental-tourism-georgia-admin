@@ -258,7 +258,7 @@ export interface CreateTreatment {
   is_active?: boolean
 }
 
-export interface UpdateTreatment extends CreateTreatment {}
+export type UpdateTreatment = Partial<CreateTreatment>
 
 export interface TreatmentFilters {
   category?: TreatmentCategory
@@ -311,7 +311,7 @@ export interface CreateTreatmentPackage {
   is_active?: boolean
 }
 
-export interface UpdateTreatmentPackage extends CreateTreatmentPackage {}
+export type UpdateTreatmentPackage = Partial<CreateTreatmentPackage>
 
 export interface TreatmentPackageFilters {
   clinic_id?: string

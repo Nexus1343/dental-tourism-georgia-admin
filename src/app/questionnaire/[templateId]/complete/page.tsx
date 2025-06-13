@@ -3,15 +3,18 @@ import { QuestionnaireCompletion } from "@/components/questionnaire/Questionnair
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 interface CompletionPageProps {
-  params: {
+  params: Promise<{
     templateId: string;
-  };
-  searchParams: {
+  }>;
+  searchParams: Promise<{
     submissionId?: string;
-  };
+  }>;
 }
 
-export default function CompletionPage({ params, searchParams }: CompletionPageProps) {
+export default async function CompletionPage({ params, searchParams }: CompletionPageProps) {
+  const { templateId } = await params;
+  const { submissionId } = await searchParams;
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-white">
       <div className="container mx-auto px-4 py-8">
@@ -22,8 +25,8 @@ export default function CompletionPage({ params, searchParams }: CompletionPageP
           </div>
         }>
           <QuestionnaireCompletion 
-            templateId={params.templateId}
-            submissionId={searchParams.submissionId}
+            templateId={templateId}
+            submissionId={submissionId}
           />
         </Suspense>
       </div>

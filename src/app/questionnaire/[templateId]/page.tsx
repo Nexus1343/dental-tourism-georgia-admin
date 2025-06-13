@@ -5,17 +5,18 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { supabase } from "@/lib/supabase";
 
 interface TemplatePageProps {
-  params: {
+  params: Promise<{
     templateId: string;
-  };
+  }>;
 }
 
 export async function generateMetadata({ params }: TemplatePageProps): Promise<Metadata> {
   try {
+    const { templateId } = await params;
     const { data: template } = await supabase
       .from('questionnaire_templates')
       .select('name, description')
-      .eq('id', params.templateId)
+      .eq('id', templateId)
       .single();
 
     if (template) {
@@ -39,7 +40,9 @@ export async function generateMetadata({ params }: TemplatePageProps): Promise<M
   };
 }
 
-export default function TemplatePage({ params }: TemplatePageProps) {
+export default async function TemplatePage({ params }: TemplatePageProps) {
+  const { templateId } = await params;
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-white">
       <div className="container mx-auto px-4 py-8">
@@ -49,7 +52,7 @@ export default function TemplatePage({ params }: TemplatePageProps) {
             <span className="ml-2 text-gray-600">Loading questionnaire details...</span>
           </div>
         }>
-          <TemplateIntroduction templateId={params.templateId} />
+          <TemplateIntroduction templateId={templateId} />
         </Suspense>
       </div>
     </div>

@@ -3,14 +3,15 @@ import { QuestionnairePage } from "@/components/questionnaire/QuestionnairePage"
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 interface QuestionnairePageProps {
-  params: {
+  params: Promise<{
     templateId: string;
     pageNumber: string;
-  };
+  }>;
 }
 
-export default function QuestionnaireFormPage({ params }: QuestionnairePageProps) {
-  const pageNumber = parseInt(params.pageNumber);
+export default async function QuestionnaireFormPage({ params }: QuestionnairePageProps) {
+  const { templateId, pageNumber: pageNumberStr } = await params;
+  const pageNumber = parseInt(pageNumberStr);
   
   if (isNaN(pageNumber)) {
     return (
@@ -32,7 +33,7 @@ export default function QuestionnaireFormPage({ params }: QuestionnairePageProps
         </div>
       }>
         <QuestionnairePage 
-          templateId={params.templateId} 
+          templateId={templateId} 
           pageNumber={pageNumber} 
         />
       </Suspense>

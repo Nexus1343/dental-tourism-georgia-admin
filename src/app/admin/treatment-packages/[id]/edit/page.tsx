@@ -184,7 +184,7 @@ export default function EditTreatmentPackagePage() {
 
   const toggleTreatment = useCallback((treatmentId: string) => {
     setFormData(prev => {
-      const currentIds = prev.treatment_ids
+      const currentIds = prev.treatment_ids || []
       const isSelected = currentIds.includes(treatmentId)
       
       if (isSelected) {
@@ -197,7 +197,8 @@ export default function EditTreatmentPackagePage() {
 
   const calculateFinalPrice = () => {
     const discount = formData.discount_percentage || 0
-    return formData.total_base_price * (1 - discount / 100)
+    const basePrice = formData.total_base_price || 0
+    return basePrice * (1 - discount / 100)
   }
 
   const formatPrice = (price: number) => {
@@ -316,14 +317,14 @@ export default function EditTreatmentPackagePage() {
                     <div
                       key={treatment.id}
                       className={`border rounded-lg p-4 transition-colors ${
-                        formData.treatment_ids.includes(treatment.id)
+                        (formData.treatment_ids || []).includes(treatment.id)
                           ? 'border-primary bg-primary/5'
                           : 'border-border hover:border-primary/50'
                       }`}
                     >
                       <div className="flex items-start space-x-3">
                         <Checkbox
-                          checked={formData.treatment_ids.includes(treatment.id)}
+                          checked={(formData.treatment_ids || []).includes(treatment.id)}
                           onCheckedChange={() => toggleTreatment(treatment.id)}
                         />
                         <div className="flex-1">
@@ -343,11 +344,11 @@ export default function EditTreatmentPackagePage() {
                   ))}
                 </div>
 
-                {formData.treatment_ids.length > 0 && (
+                {(formData.treatment_ids || []).length > 0 && (
                   <div className="mt-4 p-4 bg-muted rounded-lg">
-                    <h4 className="font-medium mb-2">Selected Treatments ({formData.treatment_ids.length})</h4>
+                    <h4 className="font-medium mb-2">Selected Treatments ({(formData.treatment_ids || []).length})</h4>
                     <div className="flex flex-wrap gap-2">
-                      {formData.treatment_ids.map((treatmentId) => {
+                      {(formData.treatment_ids || []).map((treatmentId) => {
                         const treatment = treatments.find(t => t.id === treatmentId)
                         return treatment ? (
                           <Badge key={treatmentId} variant="default">
@@ -425,14 +426,14 @@ export default function EditTreatmentPackagePage() {
               </div>
             </div>
 
-            {formData.total_base_price > 0 && (
+            {(formData.total_base_price || 0) > 0 && (
               <div className="p-4 bg-muted rounded-lg">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Final Price:</span>
                   <div className="text-right">
                     {(formData.discount_percentage || 0) > 0 && (
                       <div className="text-sm text-muted-foreground line-through">
-                        {formatPrice(formData.total_base_price)}
+                        {formatPrice(formData.total_base_price || 0)}
                       </div>
                     )}
                     <div className="text-lg font-semibold">
@@ -617,7 +618,7 @@ export default function EditTreatmentPackagePage() {
               Cancel
             </Button>
           </Link>
-          <Button type="submit" disabled={loading || formData.treatment_ids.length === 0}>
+          <Button type="submit" disabled={loading || (formData.treatment_ids || []).length === 0}>
             {loading ? (
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
             ) : (

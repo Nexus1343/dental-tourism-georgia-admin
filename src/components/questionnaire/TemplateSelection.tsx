@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Clock, FileText, Users, Search } from "lucide-react";
+import { Clock, FileText, Search } from "lucide-react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 interface QuestionnaireTemplate {
@@ -79,7 +79,7 @@ export function TemplateSelection() {
   };
 
   const filterAndSortTemplates = () => {
-    let filtered = templates.filter(template =>
+    const filtered = templates.filter(template =>
       template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       template.description.toLowerCase().includes(searchQuery.toLowerCase())
     );
@@ -193,7 +193,7 @@ export function TemplateSelection() {
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 max-w-md mx-auto">
             <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-800 mb-2">No Results Found</h3>
-            <p className="text-gray-600">No questionnaires match your search for "{searchQuery}"</p>
+            <p className="text-gray-600">No questionnaires match your search for &quot;{searchQuery}&quot;</p>
             <Button 
               variant="outline" 
               onClick={() => setSearchQuery("")}

@@ -3,14 +3,15 @@ import { UserService } from '@/lib/services/userService'
 import type { UpdateUserData } from '@/types/database'
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const result = await UserService.getUserById(params.id)
+    const { id } = await params
+    const result = await UserService.getUserById(id)
 
     if (result.error) {
       return NextResponse.json(
@@ -31,6 +32,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
+    const { id } = await params
     const body = await request.json()
     
     const userData: UpdateUserData = {
@@ -43,7 +45,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       metadata: body.metadata
     }
 
-    const result = await UserService.updateUser(params.id, userData)
+    const result = await UserService.updateUser(id, userData)
 
     if (result.error) {
       return NextResponse.json(
@@ -64,7 +66,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    const result = await UserService.deleteUser(params.id)
+    const { id } = await params
+    const result = await UserService.deleteUser(id)
 
     if (result.error) {
       return NextResponse.json(

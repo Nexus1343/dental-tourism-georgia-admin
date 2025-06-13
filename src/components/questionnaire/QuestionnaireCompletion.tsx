@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+
 import { CheckCircle, Download, Home, RotateCcw } from "lucide-react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
@@ -84,8 +84,8 @@ export function QuestionnaireCompletion({ templateId, submissionId }: Questionna
             <h3 className="font-semibold text-blue-800 mb-3">What Happens Next?</h3>
             <ul className="space-y-2 text-blue-700">
               <li>• Our dental team will review your responses</li>
-              <li>• You'll receive a personalized treatment plan within 24-48 hours</li>
-              <li>• We'll contact you to schedule a consultation if needed</li>
+              <li>• You&apos;ll receive a personalized treatment plan within 24-48 hours</li>
+              <li>• We&apos;ll contact you to schedule a consultation if needed</li>
               <li>• Your information is securely stored and kept confidential</li>
             </ul>
           </div>
@@ -118,7 +118,7 @@ export function QuestionnaireCompletion({ templateId, submissionId }: Questionna
             <h3 className="font-semibold text-gray-800 mb-2">Need Help?</h3>
             <p className="text-gray-600 text-sm mb-4">
               If you have any questions about your submission or need assistance, 
-              please don't hesitate to contact us.
+              please don&apos;t hesitate to contact us.
             </p>
             <div className="space-y-1 text-sm text-gray-600">
               <p>📧 support@dentaltourismgeorgia.com</p>

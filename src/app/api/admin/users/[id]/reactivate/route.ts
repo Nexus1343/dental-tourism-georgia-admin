@@ -2,14 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { UserService } from '@/lib/services/userService'
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
-    const result = await UserService.reactivateUser(params.id)
+    const { id } = await params
+    const result = await UserService.reactivateUser(id)
 
     if (result.error) {
       return NextResponse.json(
