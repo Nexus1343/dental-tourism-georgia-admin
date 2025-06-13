@@ -6,6 +6,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { HelpCircle, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { QuestionnaireQuestion } from '@/types/questionnaire';
+import ReactMarkdown from 'react-markdown';
 
 interface BaseQuestionProps {
   question: QuestionnaireQuestion;
@@ -58,9 +59,26 @@ export function BaseQuestion({
 
         {/* Help Text */}
         {question.help_text && (
-          <p className="text-sm text-gray-600 leading-relaxed">
-            {question.help_text}
-          </p>
+          <div className="text-sm text-gray-600 leading-relaxed">
+            <style jsx>{`
+              .markdown-help ul {
+                list-style-type: disc;
+                margin-left: 1.5em;
+                margin-bottom: 0.5em;
+              }
+              .markdown-help ol {
+                list-style-type: decimal;
+                margin-left: 1.5em;
+                margin-bottom: 0.5em;
+              }
+              .markdown-help li {
+                margin-bottom: 0.25em;
+              }
+            `}</style>
+            <div className="markdown-help">
+              <ReactMarkdown>{question.help_text}</ReactMarkdown>
+            </div>
+          </div>
         )}
       </div>
 

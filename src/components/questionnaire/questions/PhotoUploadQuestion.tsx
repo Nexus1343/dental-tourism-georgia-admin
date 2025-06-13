@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { BaseQuestion } from './BaseQuestion';
 import { QuestionRendererProps } from '@/types/questionnaire';
 import { QuestionnaireQuestion as DBQuestionnaireQuestion } from '@/types/database';
@@ -25,7 +25,7 @@ export function PhotoUploadQuestion({
   disabled = false,
   showValidation = true 
 }: QuestionRendererProps) {
-  const [files, setFiles] = useState<UploadedFile[]>(value || []);
+  const [files, setFiles] = useState<UploadedFile[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
   const [previewFile, setPreviewFile] = useState<UploadedFile | null>(null);
   
@@ -35,6 +35,40 @@ export function PhotoUploadQuestion({
   const maxFiles = question.validation_rules?.max_files || 5;
   const maxFileSize = question.validation_rules?.max_file_size || 10485760; // 10MB
   const acceptedTypes = question.validation_rules?.accepted_types || ['image/jpeg', 'image/png', 'image/heic'];
+  
+  // Initialize files from value prop
+  useEffect(() => {
+    if (value && Array.isArray(value) && value.length > 0) {
+      const initialFiles: UploadedFile[] = value.map((item: any) => {
+        if (item.file && item.preview) {
+          return item;
+        } else if (item instanceof File) {
+          return {
+            id: `file-${Date.now()}-${Math.random()}`,
+            file: item,
+            preview: URL.createObjectURL(item),
+            type: item.type.startsWith('image/') ? 'photo' : 'document'
+          };
+        }
+        return null;
+      }).filter(Boolean);
+      
+      setFiles(initialFiles);
+    } else {
+      setFiles([]);
+    }
+  }, [value]);
+  
+  // Cleanup preview URLs on unmount
+  useEffect(() => {
+    return () => {
+      files.forEach(file => {
+        if (file.preview.startsWith('blob:')) {
+          URL.revokeObjectURL(file.preview);
+        }
+      });
+    };
+  }, []);
   
   const handleFiles = useCallback((newFiles: File[]) => {
     const processedFiles: UploadedFile[] = [];
@@ -117,11 +151,7 @@ export function PhotoUploadQuestion({
     >
       <div className="space-y-4">
         {/* Upload Instructions */}
-        {question.help_text && (
-          <div className="text-sm text-blue-700 bg-blue-50 p-3 rounded-lg border border-blue-200">
-            {question.help_text}
-          </div>
-        )}
+        {/* Removed duplicate blue-framed help text. The standard help text from BaseQuestion will be shown. */}
 
         {/* Example Photo */}
         {(() => {
@@ -238,6 +268,15 @@ export function PhotoUploadQuestion({
                         src={file.preview}
                         alt={file.file.name}
                         className="w-full h-full object-cover rounded"
+                        onError={(e) => {
+                          console.error('Failed to load image preview:', file.file.name);
+                          // Try to recreate the preview URL if it failed
+                          const newPreview = URL.createObjectURL(file.file);
+                          e.currentTarget.src = newPreview;
+                        }}
+                        onLoad={() => {
+                          console.log('Image loaded successfully:', file.file.name);
+                        }}
                       />
                       
                       {/* File Actions Overlay */}
@@ -287,6 +326,12 @@ export function PhotoUploadQuestion({
                 src={previewFile.preview}
                 alt={previewFile.file.name}
                 className="max-w-full max-h-full object-contain rounded"
+                onError={(e) => {
+                  console.error('Failed to load preview modal image:', previewFile.file.name);
+                  // Try to recreate the preview URL if it failed
+                  const newPreview = URL.createObjectURL(previewFile.file);
+                  e.currentTarget.src = newPreview;
+                }}
               />
               
               <Button

@@ -15,6 +15,9 @@ import { useKeyboardNavigation } from '@/hooks/useKeyboardNavigation';
 import { QuestionnairePage, QuestionnaireQuestion } from '@/types/questionnaire';
 import { getVisibleQuestions } from '@/utils/conditionalLogic';
 import { validateQuestions, canNavigateFromPage } from '@/utils/questionnaireValidation';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft, ArrowRight, Home, Save } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface QuestionnaireFormProps {
   templateId: string;
@@ -318,6 +321,70 @@ export function QuestionnaireForm({ templateId, pageNumber }: QuestionnaireFormP
           )}
         </CardContent>
       </Card>
+
+      {/* Bottom Navigation - Duplicate for convenience */}
+      <div className="flex justify-between items-center pt-8 border-t border-gray-200 mt-8">
+        {/* Left side - Previous and Exit */}
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handlePrevious}
+            disabled={!canGoPrevious}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Previous
+          </Button>
+          
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={handleExit}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+            title="Exit questionnaire"
+          >
+            <Home className="h-4 w-4" />
+            Exit
+          </Button>
+        </div>
+
+        {/* Center - Status message */}
+        <div className="text-sm text-gray-500 text-center">
+          {canGoNext ? (
+            isLastPage ? 'Ready to complete' : 'Ready to continue'
+          ) : (
+            'Please complete required fields'
+          )}
+        </div>
+
+        {/* Right side - Save Draft and Next */}
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={handleSaveDraft}
+            className="flex items-center gap-2"
+            title="Save progress and continue later"
+          >
+            <Save className="h-4 w-4" />
+            Save Draft
+          </Button>
+          
+          <Button
+            type="button"
+            onClick={handleNext}
+            disabled={!canGoNext}
+            className={cn(
+              "flex items-center gap-2",
+              canGoNext ? "bg-green-600 hover:bg-green-700" : ""
+            )}
+          >
+            {isLastPage ? 'Complete' : 'Next'}
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
     </div>
   );
 } 
