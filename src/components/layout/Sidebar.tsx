@@ -15,7 +15,8 @@ import {
   Stethoscope,
   Package,
   HelpCircle,
-  MessageSquare
+  MessageSquare,
+  BookOpen
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -97,6 +98,16 @@ const navigation = [
     children: [
       { name: 'All Reviews', href: '/admin/patient-reviews', icon: FolderOpen },
       { name: 'Add Review', href: '/admin/patient-reviews/create', icon: Plus },
+    ]
+  },
+  {
+    name: 'Blog Posts',
+    href: '/admin/blog-posts',
+    icon: BookOpen,
+    badge: null,
+    children: [
+      { name: 'All Posts', href: '/admin/blog-posts', icon: FolderOpen },
+      { name: 'Create Post', href: '/admin/blog-posts/create', icon: Plus },
     ]
   },
   {

@@ -456,4 +456,78 @@ export interface PatientReviewFilters {
   sortOrder?: 'asc' | 'desc'
   page?: number
   limit?: number
+}
+
+// ============================================================================
+// BLOG POSTS
+// ============================================================================
+
+export type BlogPostStatus = 'draft' | 'published' | 'archived'
+
+export interface BlogPostImage {
+  id: string
+  url: string
+  filename: string
+  size: number
+}
+
+export interface BlogPost {
+  id: string
+  title: string
+  slug: string
+  short_description?: string
+  main_text_body: string
+  images: BlogPostImage[]
+  author_id?: string
+  status: BlogPostStatus
+  language: string
+  tags?: string[]
+  featured_image_url?: string
+  is_featured: boolean
+  view_count: number
+  seo_title?: string
+  seo_description?: string
+  seo_keywords?: string[]
+  published_at?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface CreateBlogPost {
+  title: string
+  slug?: string
+  short_description?: string
+  main_text_body: string
+  images?: BlogPostImage[]
+  author_id?: string
+  status?: BlogPostStatus
+  language?: string
+  tags?: string[]
+  featured_image_url?: string
+  is_featured?: boolean
+  seo_title?: string
+  seo_description?: string
+  seo_keywords?: string[]
+  published_at?: string
+}
+
+export type UpdateBlogPost = Partial<CreateBlogPost>
+
+export interface BlogPostFilters {
+  search?: string
+  status?: BlogPostStatus
+  language?: string
+  is_featured?: boolean
+  author_id?: string
+  tags?: string[]
+  date_from?: string
+  date_to?: string
+  sortBy?: string
+  sortOrder?: 'asc' | 'desc'
+  page?: number
+  limit?: number
+}
+
+export interface BlogPostWithAuthor extends BlogPost {
+  author?: User
 } 
