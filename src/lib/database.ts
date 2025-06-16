@@ -11,7 +11,12 @@ import {
   CreateClinic,
   QuestionnaireTemplateWithDetails,
   PaginatedResponse,
-  ApiResponse
+  ApiResponse,
+  BeforeAfterCase,
+  CreateBeforeAfterCase,
+  UpdateBeforeAfterCase,
+  BeforeAfterCaseFilters,
+  CaseDisplayStatus
 } from '@/types/database'
 
 // Questionnaire Template Services
@@ -670,9 +675,178 @@ export class ClinicTemplateService {
   static async removeAssignment(id: string): Promise<void> {
     const { error } = await supabase
       .from('clinic_questionnaire_templates')
-      .update({ is_active: false })
+      .delete()
       .eq('id', id)
 
     if (error) throw error
+  }
+}
+
+// ============================================================================
+// BEFORE & AFTER CASES SERVICE
+// ============================================================================
+
+export class BeforeAfterCaseService {
+  static async getAll(options?: BeforeAfterCaseFilters): Promise<PaginatedResponse<BeforeAfterCase>> {
+    let query = supabase
+      .from('before_after_cases')
+      .select('*', { count: 'exact' })
+
+    // Apply filters
+    if (options?.search) {
+      query = query.or(`title.ilike.%${options.search}%,treatment_name.ilike.%${options.search}%,treatment_description.ilike.%${options.search}%`)
+    }
+    
+    if (options?.status) {
+      query = query.eq('status', options.status)
+    }
+    
+    if (options?.treatment_name) {
+      query = query.ilike('treatment_name', `%${options.treatment_name}%`)
+    }
+
+    // Apply sorting
+    const sortBy = options?.sortBy || 'display_order'
+    const sortOrder = options?.sortOrder || 'asc'
+    query = query.order(sortBy, { ascending: sortOrder === 'asc' })
+
+    // Apply pagination
+    const page = options?.page || 1
+    const limit = options?.limit || 10
+    const from = (page - 1) * limit
+    const to = from + limit - 1
+
+    query = query.range(from, to)
+
+    const { data, error, count } = await query
+
+    if (error) throw error
+
+    return {
+      data: data || [],
+      count: count || 0,
+      page,
+      limit,
+      totalPages: Math.ceil((count || 0) / limit)
+    }
+  }
+
+  static async getById(id: string): Promise<BeforeAfterCase | null> {
+    const { data, error } = await supabase
+      .from('before_after_cases')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (error) throw error
+    return data
+  }
+
+  static async create(caseData: CreateBeforeAfterCase): Promise<BeforeAfterCase> {
+    // Get the highest display_order to set as default
+    if (!caseData.display_order) {
+      const { data: maxOrderData } = await supabase
+        .from('before_after_cases')
+        .select('display_order')
+        .order('display_order', { ascending: false })
+        .limit(1)
+        .single()
+      
+      caseData.display_order = (maxOrderData?.display_order || 0) + 1
+    }
+
+    const { data, error } = await supabase
+      .from('before_after_cases')
+      .insert([{ ...caseData, status: caseData.status || 'active' }])
+      .select()
+      .single()
+
+    if (error) throw error
+    return data
+  }
+
+  static async update(id: string, caseData: UpdateBeforeAfterCase): Promise<BeforeAfterCase> {
+    const { data, error } = await supabase
+      .from('before_after_cases')
+      .update({ ...caseData, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) throw error
+    return data
+  }
+
+  static async delete(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('before_after_cases')
+      .delete()
+      .eq('id', id)
+
+    if (error) throw error
+  }
+
+  static async updateStatus(id: string, status: CaseDisplayStatus): Promise<BeforeAfterCase> {
+    return this.update(id, { status })
+  }
+
+  static async reorder(caseUpdates: Array<{ id: string; display_order: number }>): Promise<void> {
+    const updates = caseUpdates.map(({ id, display_order }) => 
+      supabase
+        .from('before_after_cases')
+        .update({ display_order, updated_at: new Date().toISOString() })
+        .eq('id', id)
+    )
+
+    const results = await Promise.all(updates)
+    
+    const errors = results.filter(result => result.error)
+    if (errors.length > 0) {
+      throw new Error(`Failed to reorder cases: ${errors.map(e => e.error?.message).join(', ')}`)
+    }
+  }
+
+  static async getStatistics(): Promise<{
+    total: number
+    active: number
+    inactive: number
+    hidden: number
+    byTreatment: Array<{ treatment_name: string; count: number }>
+  }> {
+    // Get total counts by status
+    const { data: statusCounts, error: statusError } = await supabase
+      .from('before_after_cases')
+      .select('status')
+
+    if (statusError) throw statusError
+
+    const stats = {
+      total: statusCounts?.length || 0,
+      active: statusCounts?.filter(c => c.status === 'active').length || 0,
+      inactive: statusCounts?.filter(c => c.status === 'inactive').length || 0,
+      hidden: statusCounts?.filter(c => c.status === 'hidden').length || 0,
+      byTreatment: [] as Array<{ treatment_name: string; count: number }>
+    }
+
+    // Get counts by treatment name
+    const { data: treatmentCounts, error: treatmentError } = await supabase
+      .from('before_after_cases')
+      .select('treatment_name')
+
+    if (treatmentError) throw treatmentError
+
+    if (treatmentCounts) {
+      const treatmentMap = new Map<string, number>()
+      treatmentCounts.forEach(case_ => {
+        const current = treatmentMap.get(case_.treatment_name) || 0
+        treatmentMap.set(case_.treatment_name, current + 1)
+      })
+      
+      stats.byTreatment = Array.from(treatmentMap.entries())
+        .map(([treatment_name, count]) => ({ treatment_name, count }))
+        .sort((a, b) => b.count - a.count)
+    }
+
+    return stats
   }
 } 

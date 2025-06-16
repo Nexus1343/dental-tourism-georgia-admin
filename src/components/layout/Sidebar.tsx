@@ -16,7 +16,8 @@ import {
   Package,
   HelpCircle,
   MessageSquare,
-  BookOpen
+  BookOpen,
+  ImageIcon
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -108,6 +109,16 @@ const navigation = [
     children: [
       { name: 'All Posts', href: '/admin/blog-posts', icon: FolderOpen },
       { name: 'Create Post', href: '/admin/blog-posts/create', icon: Plus },
+    ]
+  },
+  {
+    name: 'Before & After Cases',
+    href: '/admin/before-after-cases',
+    icon: ImageIcon,
+    badge: null,
+    children: [
+      { name: 'All Cases', href: '/admin/before-after-cases', icon: FolderOpen },
+      { name: 'Add Case', href: '/admin/before-after-cases/create', icon: Plus },
     ]
   },
   {

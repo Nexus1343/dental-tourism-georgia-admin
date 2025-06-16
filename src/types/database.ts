@@ -530,4 +530,45 @@ export interface BlogPostFilters {
 
 export interface BlogPostWithAuthor extends BlogPost {
   author?: User
+}
+
+// ============================================================================
+// BEFORE & AFTER CASES
+// ============================================================================
+
+export type CaseDisplayStatus = 'active' | 'inactive' | 'hidden'
+
+export interface BeforeAfterCase {
+  id: string
+  title: string
+  treatment_name: string
+  treatment_description: string
+  before_image_url: string
+  after_image_url: string
+  status: CaseDisplayStatus
+  display_order: number
+  created_at: string
+  updated_at: string
+}
+
+export interface CreateBeforeAfterCase {
+  title: string
+  treatment_name: string
+  treatment_description: string
+  before_image_url: string
+  after_image_url: string
+  status?: CaseDisplayStatus
+  display_order?: number
+}
+
+export type UpdateBeforeAfterCase = Partial<CreateBeforeAfterCase>
+
+export interface BeforeAfterCaseFilters {
+  search?: string
+  status?: CaseDisplayStatus
+  treatment_name?: string
+  sortBy?: string
+  sortOrder?: 'asc' | 'desc'
+  page?: number
+  limit?: number
 } 
