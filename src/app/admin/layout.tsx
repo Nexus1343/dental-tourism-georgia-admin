@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Questionnaire Admin - Dental Tourism Platform",
-  description: "Admin interface for managing dental tourism questionnaires",
+  title: "Dental Admin",
+  description: "Admin interface for managing dental tourism platform",
 };
 
 export default function AdminLayout({

@@ -16,8 +16,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate file
-    const validation = StorageService.validateImageFile(file)
+    // Validate file based on upload type
+    let validation
+    if (uploadType === 'education-document' || uploadType === 'certification-document' || uploadType === 'doctor-profile' || uploadType === 'patient-photo') {
+      if (uploadType === 'doctor-profile' || uploadType === 'patient-photo') {
+        validation = StorageService.validateImageFile(file)
+      } else {
+        validation = StorageService.validateDocumentFile(file)
+      }
+    } else {
+      // Default to image validation for backwards compatibility
+      validation = StorageService.validateImageFile(file)
+    }
+    
     if (!validation.valid) {
       return NextResponse.json(
         { error: validation.error },

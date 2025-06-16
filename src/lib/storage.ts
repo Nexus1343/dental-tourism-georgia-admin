@@ -163,4 +163,36 @@ export class StorageService {
 
     return { valid: true }
   }
+
+  /**
+   * Validate document file
+   */
+  static validateDocumentFile(file: File): { valid: boolean; error?: string } {
+    const maxSize = 10 * 1024 * 1024 // 10MB
+    const allowedTypes = [
+      'application/pdf',
+      'image/jpeg', 
+      'image/jpg', 
+      'image/png', 
+      'image/webp',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ]
+
+    if (!allowedTypes.includes(file.type)) {
+      return {
+        valid: false,
+        error: 'Only PDF, Word documents, and images are allowed'
+      }
+    }
+
+    if (file.size > maxSize) {
+      return {
+        valid: false,
+        error: 'Document must be smaller than 10MB'
+      }
+    }
+
+    return { valid: true }
+  }
 } 

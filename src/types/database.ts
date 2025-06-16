@@ -412,4 +412,48 @@ export interface DatabaseResponse<T> {
     total_count: number
     total_pages: number
   }
+}
+
+// ============================================================================
+// PATIENT REVIEWS
+// ============================================================================
+
+export interface PatientReview {
+  id: string
+  patient_name: string
+  patient_country: string
+  review_text: string
+  treatment_id?: string
+  rating: number
+  is_verified: boolean
+  is_active: boolean
+  patient_photo_url?: string
+  created_at: string
+  updated_at: string
+  treatments?: Treatment
+}
+
+export interface CreatePatientReview {
+  patient_name: string
+  patient_country: string
+  review_text: string
+  treatment_id?: string
+  rating: number
+  is_verified?: boolean
+  is_active?: boolean
+  patient_photo_url?: string
+}
+
+export type UpdatePatientReview = Partial<CreatePatientReview>
+
+export interface PatientReviewFilters {
+  search?: string
+  country?: string
+  rating?: number
+  isVerified?: boolean
+  isActive?: boolean
+  sortBy?: string
+  sortOrder?: 'asc' | 'desc'
+  page?: number
+  limit?: number
 } 

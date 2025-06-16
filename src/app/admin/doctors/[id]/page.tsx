@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Edit, Trash2, Mail, Phone, MapPin, Calendar, DollarSign, Award, BookOpen, Languages } from 'lucide-react'
+import { ArrowLeft, Edit, Trash2, Mail, Phone, MapPin, Calendar, DollarSign, Award, BookOpen, Languages, ExternalLink, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -28,12 +28,14 @@ interface Doctor {
     institution: string
     year: number | null
     location?: string
+    document_url?: string
   }>
   certifications: Array<{
     name: string
     issuer: string
     year: number | null
     expiry?: string
+    document_url?: string
   }>
   languages: string[]
   bio: string | null
@@ -334,11 +336,29 @@ export default function DoctorDetailsPage() {
                 <div className="space-y-4">
                   {doctor.education.map((edu, index) => (
                     <div key={index} className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-medium">{edu.degree}</h4>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-medium">{edu.degree}</h4>
+                          {edu.document_url && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0"
+                              onClick={() => window.open(edu.document_url, '_blank')}
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </div>
                         <p className="text-muted-foreground">{edu.institution}</p>
                         {edu.location && (
                           <p className="text-sm text-muted-foreground">{edu.location}</p>
+                        )}
+                        {edu.document_url && (
+                          <div className="flex items-center gap-1 mt-1">
+                            <FileText className="h-3 w-3 text-green-600" />
+                            <span className="text-xs text-green-600">Document Available</span>
+                          </div>
                         )}
                       </div>
                       {edu.year && (
@@ -364,9 +384,27 @@ export default function DoctorDetailsPage() {
                 <div className="space-y-4">
                   {doctor.certifications.map((cert, index) => (
                     <div key={index} className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-medium">{cert.name}</h4>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-medium">{cert.name}</h4>
+                          {cert.document_url && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0"
+                              onClick={() => window.open(cert.document_url, '_blank')}
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </div>
                         <p className="text-muted-foreground">{cert.issuer}</p>
+                        {cert.document_url && (
+                          <div className="flex items-center gap-1 mt-1">
+                            <FileText className="h-3 w-3 text-green-600" />
+                            <span className="text-xs text-green-600">Document Available</span>
+                          </div>
+                        )}
                       </div>
                       <div className="text-right">
                         {cert.year && (

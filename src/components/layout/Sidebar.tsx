@@ -13,7 +13,9 @@ import {
   FolderOpen,
   UserCog,
   Stethoscope,
-  Package
+  Package,
+  HelpCircle,
+  MessageSquare
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -75,6 +77,26 @@ const navigation = [
     children: [
       { name: 'All Packages', href: '/admin/treatment-packages', icon: FolderOpen },
       { name: 'Create New', href: '/admin/treatment-packages/create', icon: Plus },
+    ]
+  },
+  {
+    name: 'FAQs',
+    href: '/admin/faqs',
+    icon: HelpCircle,
+    badge: null,
+    children: [
+      { name: 'All FAQs', href: '/admin/faqs', icon: FolderOpen },
+      { name: 'Create New', href: '/admin/faqs/create', icon: Plus },
+    ]
+  },
+  {
+    name: 'Patient Reviews',
+    href: '/admin/patient-reviews',
+    icon: MessageSquare,
+    badge: null,
+    children: [
+      { name: 'All Reviews', href: '/admin/patient-reviews', icon: FolderOpen },
+      { name: 'Add Review', href: '/admin/patient-reviews/create', icon: Plus },
     ]
   },
   {

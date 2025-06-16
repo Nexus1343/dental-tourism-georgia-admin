@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Save, X, Plus } from 'lucide-react'
+import { ArrowLeft, Save, X, Plus, Upload, Camera, User, FileText, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -24,6 +24,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import Link from 'next/link'
 
 interface FormOptions {
@@ -63,6 +64,7 @@ interface Education {
   institution: string
   year: number | null
   location?: string
+  document_url?: string
 }
 
 interface Certification {
@@ -70,6 +72,7 @@ interface Certification {
   issuer: string
   year: number | null
   expiry?: string
+  document_url?: string
 }
 
 export default function EditDoctorPage() {
@@ -78,6 +81,12 @@ export default function EditDoctorPage() {
   const [loading, setLoading] = useState(false)
   const [initialLoading, setInitialLoading] = useState(true)
   const [options, setOptions] = useState<FormOptions | null>(null)
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const [uploadingEducationDoc, setUploadingEducationDoc] = useState<number | null>(null)
+  const [uploadingCertificationDoc, setUploadingCertificationDoc] = useState<number | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const educationFileInputRefs = useRef<(HTMLInputElement | null)[]>([])
+  const certificationFileInputRefs = useRef<(HTMLInputElement | null)[]>([])
   const [formData, setFormData] = useState({
     user_id: '',
     clinic_id: '',
@@ -213,7 +222,7 @@ export default function EditDoctorPage() {
   const addEducation = () => {
     setFormData({
       ...formData,
-      education: [...formData.education, { degree: '', institution: '', year: null, location: '' }]
+      education: [...formData.education, { degree: '', institution: '', year: null, location: '', document_url: '' }]
     })
   }
 
@@ -231,7 +240,7 @@ export default function EditDoctorPage() {
   const addCertification = () => {
     setFormData({
       ...formData,
-      certifications: [...formData.certifications, { name: '', issuer: '', year: null, expiry: '' }]
+      certifications: [...formData.certifications, { name: '', issuer: '', year: null, expiry: '', document_url: '' }]
     })
   }
 
@@ -249,6 +258,214 @@ export default function EditDoctorPage() {
   const getSpecializationLabel = (value: string) => {
     const spec = options?.specializations.find(s => s.value === value)
     return spec ? spec.label : value
+  }
+
+  const handleImageUpload = async (file: File) => {
+    if (!file) return
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+    if (!allowedTypes.includes(file.type)) {
+      alert('Please select a valid image file (JPEG, PNG, or WebP)')
+      return
+    }
+
+    // Validate file size (5MB limit)
+    const maxSize = 5 * 1024 * 1024
+    if (file.size > maxSize) {
+      alert('Please select an image smaller than 5MB')
+      return
+    }
+
+    setUploadingImage(true)
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('uploadType', 'doctor-profile')
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to upload image')
+      }
+
+      const result = await response.json()
+      
+      if (result.success && result.data) {
+        const imageUrl = result.data.publicUrl || result.data.url
+        setFormData(prev => ({
+          ...prev,
+          profile_image_url: imageUrl
+        }))
+      } else {
+        throw new Error('Upload failed')
+      }
+    } catch (error) {
+      console.error('Upload error:', error)
+      alert('Failed to upload image. Please try again.')
+    } finally {
+      setUploadingImage(false)
+    }
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      handleImageUpload(file)
+    }
+  }
+
+  const openFileSelector = () => {
+    fileInputRef.current?.click()
+  }
+
+  const removeProfileImage = () => {
+    setFormData(prev => ({
+      ...prev,
+      profile_image_url: ''
+    }))
+  }
+
+  const getDoctorInitials = () => {
+    if (!options?.users) return 'DR'
+    
+    const selectedUser = options.users.find(u => u.id === formData.user_id)
+    if (!selectedUser) return 'DR'
+    
+    const { first_name, last_name } = selectedUser
+    return `${first_name?.[0] || ''}${last_name?.[0] || ''}`.toUpperCase() || selectedUser.email[0].toUpperCase()
+  }
+
+  const handleEducationDocumentUpload = async (file: File, educationIndex: number) => {
+    if (!file) return
+
+    // Validate file type (allow documents and images)
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+    if (!allowedTypes.includes(file.type)) {
+      alert('Please select a valid document file (PDF, Word, or Image)')
+      return
+    }
+
+    // Validate file size (10MB limit for documents)
+    const maxSize = 10 * 1024 * 1024
+    if (file.size > maxSize) {
+      alert('Please select a file smaller than 10MB')
+      return
+    }
+
+    setUploadingEducationDoc(educationIndex)
+
+    try {
+      const uploadFormData = new FormData()
+      uploadFormData.append('file', file)
+      uploadFormData.append('uploadType', 'education-document')
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: uploadFormData
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to upload document')
+      }
+
+      const result = await response.json()
+      
+      if (result.success && result.data) {
+        const documentUrl = result.data.publicUrl || result.data.url
+        updateEducation(educationIndex, 'document_url', documentUrl)
+      } else {
+        throw new Error('Upload failed')
+      }
+    } catch (error) {
+      console.error('Upload error:', error)
+      alert('Failed to upload document. Please try again.')
+    } finally {
+      setUploadingEducationDoc(null)
+    }
+  }
+
+  const handleCertificationDocumentUpload = async (file: File, certificationIndex: number) => {
+    if (!file) return
+
+    // Validate file type (allow documents and images) 
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+    if (!allowedTypes.includes(file.type)) {
+      alert('Please select a valid document file (PDF, Word, or Image)')
+      return
+    }
+
+    // Validate file size (10MB limit for documents)
+    const maxSize = 10 * 1024 * 1024
+    if (file.size > maxSize) {
+      alert('Please select a file smaller than 10MB')
+      return
+    }
+
+    setUploadingCertificationDoc(certificationIndex)
+
+    try {
+      const uploadFormData = new FormData()
+      uploadFormData.append('file', file)
+      uploadFormData.append('uploadType', 'certification-document')
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: uploadFormData
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to upload document')
+      }
+
+      const result = await response.json()
+      
+      if (result.success && result.data) {
+        const documentUrl = result.data.publicUrl || result.data.url
+        updateCertification(certificationIndex, 'document_url', documentUrl)
+      } else {
+        throw new Error('Upload failed')
+      }
+    } catch (error) {
+      console.error('Upload error:', error)
+      alert('Failed to upload document. Please try again.')
+    } finally {
+      setUploadingCertificationDoc(null)
+    }
+  }
+
+  const handleEducationFileSelect = (e: React.ChangeEvent<HTMLInputElement>, educationIndex: number) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      handleEducationDocumentUpload(file, educationIndex)
+    }
+  }
+
+  const handleCertificationFileSelect = (e: React.ChangeEvent<HTMLInputElement>, certificationIndex: number) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      handleCertificationDocumentUpload(file, certificationIndex)
+    }
+  }
+
+  const openEducationFileSelector = (educationIndex: number) => {
+    educationFileInputRefs.current[educationIndex]?.click()
+  }
+
+  const openCertificationFileSelector = (certificationIndex: number) => {
+    certificationFileInputRefs.current[certificationIndex]?.click()
+  }
+
+  const removeEducationDocument = (educationIndex: number) => {
+    updateEducation(educationIndex, 'document_url', '')
+  }
+
+  const removeCertificationDocument = (certificationIndex: number) => {    
+    updateCertification(certificationIndex, 'document_url', '')
   }
 
   if (initialLoading || !options) {
@@ -295,6 +512,58 @@ export default function EditDoctorPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
+                {/* Profile Picture Upload */}
+                <div className="space-y-4">
+                  <Label>Profile Picture</Label>
+                  <div className="flex items-center gap-4">
+                    <Avatar className="w-24 h-24">
+                      <AvatarImage src={formData.profile_image_url || undefined} />
+                      <AvatarFallback className="text-lg">
+                        {getDoctorInitials()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={openFileSelector}
+                        disabled={uploadingImage}
+                        className="flex items-center gap-2"
+                      >
+                        {uploadingImage ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                            Uploading...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="h-4 w-4" />
+                            Upload Photo
+                          </>
+                        )}
+                      </Button>
+                      {formData.profile_image_url && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={removeProfileImage}
+                          className="flex items-center gap-2 text-red-600 hover:text-red-700"
+                        >
+                          <X className="h-4 w-4" />
+                          Remove
+                        </Button>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        JPEG, PNG, or WebP. Max 5MB.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="user_id">Link to User Account</Label>
@@ -493,6 +762,69 @@ export default function EditDoctorPage() {
                         />
                       </div>
                     </div>
+
+                    {/* Document Upload Section */}
+                    <div className="space-y-3 pt-2 border-t">
+                      <Label>Supporting Document</Label>
+                      <div className="flex items-center gap-3">
+                        {edu.document_url ? (
+                          <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 px-3 py-2 rounded-md border border-green-200">
+                            <FileText className="h-4 w-4" />
+                            <span>Document uploaded</span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => window.open(edu.document_url, '_blank')}
+                              className="p-1 h-auto"
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="text-sm text-gray-500">
+                            No document uploaded
+                          </div>
+                        )}
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openEducationFileSelector(index)}
+                            disabled={uploadingEducationDoc === index}
+                            className="flex items-center gap-2"
+                          >
+                            {uploadingEducationDoc === index ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                                Uploading...
+                              </>
+                            ) : (
+                              <>
+                                <Upload className="h-4 w-4" />
+                                {edu.document_url ? 'Replace' : 'Upload'}
+                              </>
+                            )}
+                          </Button>
+                          {edu.document_url && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => removeEducationDocument(index)}
+                              className="flex items-center gap-2 text-red-600 hover:text-red-700"
+                            >
+                              <X className="h-4 w-4" />
+                              Remove
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Upload diploma, certificate, or transcript (PDF, Word, or Image. Max 10MB)
+                      </p>
+                    </div>
                   </div>
                 ))}
                 <Button type="button" variant="outline" onClick={addEducation}>
@@ -559,6 +891,69 @@ export default function EditDoctorPage() {
                           onChange={(e) => updateCertification(index, 'expiry', e.target.value)}
                         />
                       </div>
+                    </div>
+
+                    {/* Document Upload Section */}
+                    <div className="space-y-3 pt-2 border-t">
+                      <Label>Supporting Document</Label>
+                      <div className="flex items-center gap-3">
+                        {cert.document_url ? (
+                          <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 px-3 py-2 rounded-md border border-green-200">
+                            <FileText className="h-4 w-4" />
+                            <span>Document uploaded</span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => window.open(cert.document_url, '_blank')}
+                              className="p-1 h-auto"
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="text-sm text-gray-500">
+                            No document uploaded
+                          </div>
+                        )}
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openCertificationFileSelector(index)}
+                            disabled={uploadingCertificationDoc === index}
+                            className="flex items-center gap-2"
+                          >
+                            {uploadingCertificationDoc === index ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                                Uploading...
+                              </>
+                            ) : (
+                              <>
+                                <Upload className="h-4 w-4" />
+                                {cert.document_url ? 'Replace' : 'Upload'}
+                              </>
+                            )}
+                          </Button>
+                          {cert.document_url && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => removeCertificationDocument(index)}
+                              className="flex items-center gap-2 text-red-600 hover:text-red-700"
+                            >
+                              <X className="h-4 w-4" />
+                              Remove
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Upload certificate or license document (PDF, Word, or Image. Max 10MB)
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -647,6 +1042,39 @@ export default function EditDoctorPage() {
             )}
           </Button>
         </div>
+
+        {/* Hidden File Inputs */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/jpg,image/png,image/webp"
+          onChange={handleFileSelect}
+          className="hidden"
+        />
+        
+        {/* Education Document Inputs */}
+        {formData.education.map((_, index) => (
+          <input
+            key={`education-${index}`}
+            ref={(el) => { educationFileInputRefs.current[index] = el }}
+            type="file"
+            accept="application/pdf,image/jpeg,image/jpg,image/png,image/webp,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            onChange={(e) => handleEducationFileSelect(e, index)}
+            className="hidden"
+          />
+        ))}
+        
+        {/* Certification Document Inputs */}
+        {formData.certifications.map((_, index) => (
+          <input
+            key={`certification-${index}`}
+            ref={(el) => { certificationFileInputRefs.current[index] = el }}
+            type="file"
+            accept="application/pdf,image/jpeg,image/jpg,image/png,image/webp,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            onChange={(e) => handleCertificationFileSelect(e, index)}
+            className="hidden"
+          />
+        ))}
       </form>
     </div>
   )
