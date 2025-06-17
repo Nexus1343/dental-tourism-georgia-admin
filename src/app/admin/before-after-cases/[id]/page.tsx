@@ -7,7 +7,6 @@ import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Breadcrumbs } from '@/components/ui/breadcrumbs'
 import { 
   ArrowLeft, 
   Edit, 
@@ -139,31 +138,17 @@ export default function ViewBeforeAfterCasePage({ params }: ViewCasePageProps) {
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumbs */}
-      <Breadcrumbs 
-        items={[
-          { label: 'Dashboard', href: '/admin' },
-          { label: 'Before & After Cases', href: '/admin/before-after-cases' },
-          { label: case_.title }
-        ]}
-      />
-
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <Link href="/admin/before-after-cases">
             <Button variant="outline" size="sm">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Cases
+              Back
             </Button>
           </Link>
-          <div className="flex items-center space-x-3">
-            <ImageIcon className="h-6 w-6 text-primary" />
-            <div>
-              <h1 className="text-2xl font-bold">{case_.title}</h1>
-              <p className="text-muted-foreground">{case_.treatment_name}</p>
-            </div>
-          </div>
+          <ImageIcon className="h-6 w-6 text-primary" />
+          <h1 className="text-2xl font-bold">{case_.title}</h1>
         </div>
         <div className="flex items-center space-x-2">
           <Badge className={statusBadge.color}>

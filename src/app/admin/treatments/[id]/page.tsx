@@ -19,7 +19,8 @@ import {
   Heart,
   AlertTriangle,
   Shield,
-  FileText
+  FileText,
+  DollarSign
 } from 'lucide-react'
 import { Treatment, TreatmentCategory } from '@/types/database'
 import { toast } from 'sonner'
@@ -233,7 +234,7 @@ export default function TreatmentDetailPage() {
               <CardTitle>Treatment Details</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="flex items-center space-x-2">
                   <Clock className="h-4 w-4 text-muted-foreground" />
                   <div>
@@ -258,6 +259,18 @@ export default function TreatmentDetailPage() {
                     <p className="text-sm font-medium">Anesthesia</p>
                     <p className="text-sm text-muted-foreground">
                       {treatment.anesthesia_required ? 'Required' : 'Not required'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <DollarSign className="h-4 w-4 text-green-600" />
+                  <div>
+                    <p className="text-sm font-medium">Base Price</p>
+                    <p className="text-sm text-muted-foreground">
+                      {treatment.base_price ? 
+                        `${treatment.base_price} ${treatment.currency || 'USD'}` : 
+                        'Not specified'
+                      }
                     </p>
                   </div>
                 </div>

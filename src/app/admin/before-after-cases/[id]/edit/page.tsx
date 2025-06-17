@@ -16,7 +16,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Breadcrumbs } from '@/components/ui/breadcrumbs'
 import { ArrowLeft, Upload, ImageIcon } from 'lucide-react'
 import { BeforeAfterCase, UpdateBeforeAfterCase, CaseDisplayStatus } from '@/types/database'
 import { toast } from 'sonner'
@@ -185,31 +184,16 @@ export default function EditBeforeAfterCasePage({ params }: EditCasePageProps) {
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumbs */}
-      <Breadcrumbs 
-        items={[
-          { label: 'Dashboard', href: '/admin' },
-          { label: 'Before & After Cases', href: '/admin/before-after-cases' },
-          { label: originalCase.title, href: `/admin/before-after-cases/${resolvedParams.id}` },
-          { label: 'Edit' }
-        ]}
-      />
-
       {/* Header */}
       <div className="flex items-center space-x-3">
         <Link href="/admin/before-after-cases">
           <Button variant="outline" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Cases
+            Back
           </Button>
         </Link>
-        <div className="flex items-center space-x-3">
-          <ImageIcon className="h-6 w-6 text-primary" />
-          <div>
-            <h1 className="text-2xl font-bold">Edit Case</h1>
-            <p className="text-muted-foreground">Update "{originalCase.title}"</p>
-          </div>
-        </div>
+        <ImageIcon className="h-6 w-6 text-primary" />
+        <h1 className="text-2xl font-bold">Edit Case</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">

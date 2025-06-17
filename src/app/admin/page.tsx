@@ -1,6 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { FileText, Building2, BarChart3, Plus, Eye } from "lucide-react"
 import Link from "next/link"
@@ -8,20 +7,11 @@ import Link from "next/link"
 export default function Dashboard() {
   return (
     <div className="space-y-6">
-      {/* Breadcrumbs */}
-      <Breadcrumbs 
-        items={[
-          { label: 'Dashboard' }
-        ]}
-      />
-
-      {/* Page Header */}
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">
-            Welcome to the Questionnaire Admin Panel
-          </p>
+        <div className="flex items-center space-x-3">
+          <BarChart3 className="h-6 w-6 text-primary" />
+          <h1 className="text-2xl font-bold">Dashboard</h1>
         </div>
         <Button asChild>
           <Link href="/admin/templates/create">

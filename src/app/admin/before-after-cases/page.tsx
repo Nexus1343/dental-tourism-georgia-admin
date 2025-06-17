@@ -21,7 +21,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Breadcrumbs } from '@/components/ui/breadcrumbs'
 import { 
   Plus, 
   Search, 
@@ -157,22 +156,11 @@ export default function BeforeAfterCasesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumbs */}
-      <Breadcrumbs 
-        items={[
-          { label: 'Dashboard', href: '/admin' },
-          { label: 'Before & After Cases' }
-        ]}
-      />
-
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <ImageIcon className="h-6 w-6 text-primary" />
-          <div>
-            <h1 className="text-2xl font-bold">Before & After Cases</h1>
-            <p className="text-muted-foreground">Manage treatment before and after photos</p>
-          </div>
+          <h1 className="text-2xl font-bold">Before & After Cases</h1>
         </div>
         <Link href="/admin/before-after-cases/create">
           <Button>

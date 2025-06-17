@@ -259,6 +259,7 @@ export default function TreatmentsPage() {
                 <TableHead>Name</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Price</TableHead>
                 <TableHead>Duration</TableHead>
                 <TableHead>Recovery Time</TableHead>
                 <TableHead>Created</TableHead>
@@ -268,13 +269,13 @@ export default function TreatmentsPage() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
+                  <TableCell colSpan={8} className="text-center py-8">
                     Loading treatments...
                   </TableCell>
                 </TableRow>
               ) : treatments.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
+                  <TableCell colSpan={8} className="text-center py-8">
                     No treatments found
                   </TableCell>
                 </TableRow>
@@ -296,6 +297,12 @@ export default function TreatmentsPage() {
                       <Badge variant={treatment.is_active ? 'default' : 'secondary'}>
                         {treatment.is_active ? 'Active' : 'Inactive'}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {treatment.base_price ? 
+                        `${treatment.base_price} ${treatment.currency || 'USD'}` : 
+                        '-'
+                      }
                     </TableCell>
                     <TableCell>
                       {treatment.duration_minutes ? `${treatment.duration_minutes} min` : '-'}

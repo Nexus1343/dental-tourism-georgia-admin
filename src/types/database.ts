@@ -229,6 +229,8 @@ export interface Treatment {
   risks: string[]
   aftercare_instructions?: string
   images: Record<string, any>[]
+  base_price?: number
+  currency: string
   seo_title?: string
   seo_description?: string
   seo_keywords: string[]
@@ -252,6 +254,8 @@ export interface CreateTreatment {
   risks?: string[]
   aftercare_instructions?: string
   images?: Record<string, any>[]
+  base_price?: number
+  currency?: string
   seo_title?: string
   seo_description?: string
   seo_keywords?: string[]

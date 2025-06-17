@@ -118,6 +118,8 @@ export async function POST(request: NextRequest) {
       risks: body.risks || [],
       aftercare_instructions: body.aftercare_instructions || null,
       images: body.images || [],
+      base_price: body.base_price || null,
+      currency: body.currency || 'USD',
       seo_title: body.seo_title || null,
       seo_description: body.seo_description || null,
       seo_keywords: body.seo_keywords || [],

@@ -6,11 +6,7 @@ import {
   FileText, 
   Building2, 
   BarChart3, 
-  Settings, 
   Users,
-  Eye,
-  Plus,
-  FolderOpen,
   UserCog,
   Stethoscope,
   Package,
@@ -39,11 +35,7 @@ const navigation = [
     name: 'Templates',
     href: '/admin/templates',
     icon: FileText,
-    badge: null,
-    children: [
-      { name: 'All Templates', href: '/admin/templates', icon: FolderOpen },
-      { name: 'Create New', href: '/admin/templates/create', icon: Plus },
-    ]
+    badge: null
   },
   {
     name: 'Clinics',
@@ -55,98 +47,49 @@ const navigation = [
     name: 'Doctors',
     href: '/admin/doctors',
     icon: UserCog,
-    badge: null,
-    children: [
-      { name: 'All Doctors', href: '/admin/doctors', icon: FolderOpen },
-      { name: 'Create New', href: '/admin/doctors/create', icon: Plus },
-    ]
+    badge: null
   },
   {
     name: 'Treatments',
     href: '/admin/treatments',
     icon: Stethoscope,
-    badge: null,
-    children: [
-      { name: 'All Treatments', href: '/admin/treatments', icon: FolderOpen },
-      { name: 'Create New', href: '/admin/treatments/create', icon: Plus },
-    ]
+    badge: null
   },
   {
     name: 'Treatment Packages',
     href: '/admin/treatment-packages',
     icon: Package,
-    badge: null,
-    children: [
-      { name: 'All Packages', href: '/admin/treatment-packages', icon: FolderOpen },
-      { name: 'Create New', href: '/admin/treatment-packages/create', icon: Plus },
-    ]
+    badge: null
   },
   {
     name: 'FAQs',
     href: '/admin/faqs',
     icon: HelpCircle,
-    badge: null,
-    children: [
-      { name: 'All FAQs', href: '/admin/faqs', icon: FolderOpen },
-      { name: 'Create New', href: '/admin/faqs/create', icon: Plus },
-    ]
+    badge: null
   },
   {
     name: 'Patient Reviews',
     href: '/admin/patient-reviews',
     icon: MessageSquare,
-    badge: null,
-    children: [
-      { name: 'All Reviews', href: '/admin/patient-reviews', icon: FolderOpen },
-      { name: 'Add Review', href: '/admin/patient-reviews/create', icon: Plus },
-    ]
+    badge: null
   },
   {
     name: 'Blog Posts',
     href: '/admin/blog-posts',
     icon: BookOpen,
-    badge: null,
-    children: [
-      { name: 'All Posts', href: '/admin/blog-posts', icon: FolderOpen },
-      { name: 'Create Post', href: '/admin/blog-posts/create', icon: Plus },
-    ]
+    badge: null
   },
   {
     name: 'Before & After Cases',
     href: '/admin/before-after-cases',
     icon: ImageIcon,
-    badge: null,
-    children: [
-      { name: 'All Cases', href: '/admin/before-after-cases', icon: FolderOpen },
-      { name: 'Add Case', href: '/admin/before-after-cases/create', icon: Plus },
-    ]
-  },
-  {
-    name: 'Preview',
-    href: '/admin/preview',
-    icon: Eye,
     badge: null
   },
-  {
-    name: 'Analytics',
-    href: '/admin/analytics',
-    icon: BarChart3,
-    badge: 'New'
-  },
+
   {
     name: 'Users',
     href: '/admin/users',
     icon: Users,
-    badge: null,
-    children: [
-      { name: 'All Users', href: '/admin/users', icon: FolderOpen },
-      { name: 'Create User', href: '/admin/users/create', icon: Plus },
-    ]
-  },
-  {
-    name: 'Settings',
-    href: '/admin/settings',
-    icon: Settings,
     badge: null
   }
 ]
@@ -176,8 +119,7 @@ export function Sidebar({ className, isOpen = true, onClose }: SidebarProps) {
           {/* Navigation */}
           <nav className="flex-1 space-y-1 p-4 overflow-y-auto">
             {navigation.map((item) => {
-              const isActive = pathname === item.href || 
-                (item.children && item.children.some(child => pathname === child.href))
+              const isActive = pathname === item.href
               
               return (
                 <div key={item.name}>
@@ -199,28 +141,6 @@ export function Sidebar({ className, isOpen = true, onClose }: SidebarProps) {
                       </Badge>
                     )}
                   </Link>
-                  
-                  {/* Sub-navigation */}
-                  {item.children && isActive && (
-                    <div className="ml-4 mt-1 space-y-1">
-                      {item.children.map((child) => (
-                        <Link
-                          key={child.name}
-                          href={child.href}
-                          onClick={onClose}
-                          className={cn(
-                            "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground",
-                            pathname === child.href
-                              ? "bg-accent text-accent-foreground"
-                              : "text-muted-foreground"
-                          )}
-                        >
-                          <child.icon className="h-3 w-3" />
-                          <span>{child.name}</span>
-                        </Link>
-                      ))}
-                    </div>
-                  )}
                 </div>
               )
             })}

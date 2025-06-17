@@ -102,6 +102,8 @@ export default function EditTreatmentPage() {
         risks: data.risks || [],
         aftercare_instructions: data.aftercare_instructions || '',
         images: data.images || [],
+        base_price: data.base_price,
+        currency: data.currency || 'USD',
         seo_title: data.seo_title || '',
         seo_description: data.seo_description || '',
         seo_keywords: data.seo_keywords || [],
@@ -347,6 +349,39 @@ export default function EditTreatmentPage() {
                   value={formData.recovery_time_days || ''}
                   onChange={(e) => updateFormData('recovery_time_days', e.target.value ? parseInt(e.target.value) : undefined)}
                 />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="base_price">Base Price</Label>
+                <Input
+                  id="base_price"
+                  type="number"
+                  step="0.01"
+                  placeholder="e.g., 1500.00"
+                  value={formData.base_price || ''}
+                  onChange={(e) => updateFormData('base_price', e.target.value ? parseFloat(e.target.value) : undefined)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="currency">Currency</Label>
+                <Select
+                  value={formData.currency || 'USD'}
+                  onValueChange={(value) => updateFormData('currency', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select currency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="USD">USD - US Dollar</SelectItem>
+                    <SelectItem value="EUR">EUR - Euro</SelectItem>
+                    <SelectItem value="GBP">GBP - British Pound</SelectItem>
+                    <SelectItem value="GEL">GEL - Georgian Lari</SelectItem>
+                    <SelectItem value="CAD">CAD - Canadian Dollar</SelectItem>
+                    <SelectItem value="AUD">AUD - Australian Dollar</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 

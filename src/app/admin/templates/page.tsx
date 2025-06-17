@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { DeleteConfirmDialog } from "@/components/ui/confirm-dialog"
 import { toast } from "sonner"
@@ -127,20 +126,11 @@ export default function TemplatesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumbs */}
-      <Breadcrumbs 
-        items={[
-          { label: 'Templates', icon: FileText }
-        ]}
-      />
-
-      {/* Page Header */}
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Templates</h1>
-          <p className="text-muted-foreground">
-            Manage questionnaire templates for dental clinics
-          </p>
+        <div className="flex items-center space-x-3">
+          <FileText className="h-6 w-6 text-primary" />
+          <h1 className="text-2xl font-bold">Templates</h1>
         </div>
         <Button asChild>
           <Link href="/admin/templates/create">

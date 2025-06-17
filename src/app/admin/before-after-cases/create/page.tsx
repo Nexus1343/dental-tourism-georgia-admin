@@ -16,7 +16,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Breadcrumbs } from '@/components/ui/breadcrumbs'
 import { ArrowLeft, Upload, ImageIcon, X, Loader2 } from 'lucide-react'
 import { CreateBeforeAfterCase, CaseDisplayStatus } from '@/types/database'
 import { toast } from 'sonner'
@@ -143,30 +142,16 @@ export default function CreateBeforeAfterCasePage() {
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumbs */}
-      <Breadcrumbs 
-        items={[
-          { label: 'Dashboard', href: '/admin' },
-          { label: 'Before & After Cases', href: '/admin/before-after-cases' },
-          { label: 'Create New Case' }
-        ]}
-      />
-
       {/* Header */}
       <div className="flex items-center space-x-3">
         <Link href="/admin/before-after-cases">
           <Button variant="outline" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Cases
+            Back
           </Button>
         </Link>
-        <div className="flex items-center space-x-3">
-          <ImageIcon className="h-6 w-6 text-primary" />
-          <div>
-            <h1 className="text-2xl font-bold">Create New Case</h1>
-            <p className="text-muted-foreground">Add a new before and after case</p>
-          </div>
-        </div>
+        <ImageIcon className="h-6 w-6 text-primary" />
+        <h1 className="text-2xl font-bold">Create New Case</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
