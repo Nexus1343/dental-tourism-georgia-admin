@@ -132,6 +132,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Prepare blog post data
+    const status = body.status || 'draft';
     const blogPostData = {
       title: body.title,
       slug: slug,
@@ -139,15 +140,15 @@ export async function POST(request: NextRequest) {
       main_text_body: body.main_text_body,
       images: body.images || [],
       author_id: body.author_id || null,
-      status: body.status || 'draft',
+      status: status,
       language: body.language || 'en',
       tags: body.tags || [],
       featured_image_url: body.featured_image_url || null,
-      is_featured: body.is_featured || false,
+      is_featured: status === 'published' ? true : (body.is_featured || false),
       seo_title: body.seo_title || null,
       seo_description: body.seo_description || null,
       seo_keywords: body.seo_keywords || [],
-      published_at: body.status === 'published' ? new Date().toISOString() : null
+      published_at: status === 'published' ? new Date().toISOString() : null
     };
 
     const { data: blogPost, error } = await supabase

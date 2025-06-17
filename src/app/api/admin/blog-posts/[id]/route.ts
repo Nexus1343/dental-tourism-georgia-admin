@@ -93,6 +93,7 @@ export async function PUT(
     }
 
     // Prepare update data
+    const newStatus = body.status || existingPost.status;
     const updateData: any = {
       title: body.title,
       slug: slug,
@@ -100,11 +101,11 @@ export async function PUT(
       main_text_body: body.main_text_body,
       images: body.images || existingPost.images,
       author_id: body.author_id || existingPost.author_id,
-      status: body.status || existingPost.status,
+      status: newStatus,
       language: body.language || existingPost.language,
       tags: body.tags || existingPost.tags,
       featured_image_url: body.featured_image_url || existingPost.featured_image_url,
-      is_featured: body.is_featured !== undefined ? body.is_featured : existingPost.is_featured,
+      is_featured: newStatus === 'published' ? true : (body.is_featured !== undefined ? body.is_featured : existingPost.is_featured),
       seo_title: body.seo_title || existingPost.seo_title,
       seo_description: body.seo_description || existingPost.seo_description,
       seo_keywords: body.seo_keywords || existingPost.seo_keywords,
@@ -112,7 +113,7 @@ export async function PUT(
     };
 
     // Update published_at if status changed to published
-    if (body.status === 'published' && existingPost.status !== 'published') {
+    if (newStatus === 'published' && existingPost.status !== 'published') {
       updateData.published_at = new Date().toISOString();
     }
 
