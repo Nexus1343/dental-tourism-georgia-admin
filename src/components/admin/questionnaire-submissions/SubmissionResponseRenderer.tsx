@@ -425,7 +425,7 @@ export function SubmissionResponseRenderer({
         </CardTitle>
         <div className="space-y-2">
           <p className="text-sm text-muted-foreground">
-            Responses from "{templateName}" questionnaire
+            Responses from &quot;{templateName}&quot; questionnaire
           </p>
           <div className="flex items-center gap-4 text-sm">
             <div className="flex items-center gap-1">

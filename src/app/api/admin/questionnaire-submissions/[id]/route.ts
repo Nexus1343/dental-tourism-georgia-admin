@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase, supabaseAdmin } from '@/lib/supabase';
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const client = supabaseAdmin || supabase;
-  const { id } = params;
+  const { id } = await params;
   const { data, error } = await client
     .from('questionnaire_submissions_detail')
     .select('*')
