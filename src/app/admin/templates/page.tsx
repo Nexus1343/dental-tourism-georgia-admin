@@ -34,11 +34,12 @@ import {
   Eye,
   Building2,
   Clock,
-  Users
+  Users,
+  CheckCircle,
+  XCircle
 } from "lucide-react"
 import Link from "next/link"
 import { QuestionnaireTemplate } from "@/types/database"
-import { QuestionnaireTemplateService } from "@/lib/database"
 
 export default function TemplatesPage() {
   const [templates, setTemplates] = useState<QuestionnaireTemplate[]>([])
@@ -57,16 +58,22 @@ export default function TemplatesPage() {
         setLoading(true)
         setError(null)
         
-        const response = await QuestionnaireTemplateService.getAll({
-          search: searchQuery || undefined,
-          status: statusFilter === "all" ? undefined : (statusFilter as "active" | "inactive"),
-          language: languageFilter === "all" ? undefined : languageFilter,
-          page: 1,
-          limit: 50 // Load first 50 templates
-        })
+        const params = new URLSearchParams();
+        if (searchQuery) params.append('search', searchQuery);
+        if (statusFilter !== 'all') params.append('status', statusFilter);
+        if (languageFilter !== 'all') params.append('language', languageFilter);
+        params.append('page', '1');
+        params.append('limit', '50');
+
+        const response = await fetch(`/api/admin/templates?${params.toString()}`);
         
-        setTemplates(response.data)
-        setFilteredTemplates(response.data)
+        if (!response.ok) {
+          throw new Error('Failed to fetch templates');
+        }
+        
+        const result = await response.json();
+        setTemplates(result.data || []);
+        setFilteredTemplates(result.data || []);
       } catch (err) {
         console.error("Error loading templates:", err)
         setError(err instanceof Error ? err.message : "Failed to load templates")
@@ -91,7 +98,14 @@ export default function TemplatesPage() {
 
   const handleDeleteTemplate = async (templateId: string) => {
     try {
-      await QuestionnaireTemplateService.delete(templateId)
+      const response = await fetch(`/api/admin/templates/${templateId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete template');
+      }
+
       setTemplates(prev => prev.filter(t => t.id !== templateId))
       setSelectedTemplates(prev => prev.filter(id => id !== templateId))
       toast.success("Template deleted successfully")
@@ -107,12 +121,60 @@ export default function TemplatesPage() {
       if (!template) return
       
       const newName = `${template.name} (Copy)`
-      const duplicated = await QuestionnaireTemplateService.duplicate(templateId, newName)
-      setTemplates(prev => [duplicated, ...prev])
+      
+      const response = await fetch('/api/admin/templates', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: newName,
+          description: template.description,
+          estimated_completion_minutes: template.estimated_completion_minutes,
+          introduction_text: template.introduction_text,
+          completion_message: template.completion_message,
+          language: template.language,
+          is_active: false, // Start as inactive for duplicated templates
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to duplicate template');
+      }
+
+      const result = await response.json();
+      setTemplates(prev => [result.data, ...prev])
       toast.success("Template duplicated successfully")
     } catch (err) {
       console.error("Error duplicating template:", err)
       toast.error("Failed to duplicate template")
+    }
+  }
+
+  const handleToggleStatus = async (templateId: string) => {
+    try {
+      const response = await fetch(`/api/admin/templates/${templateId}/toggle-status`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to toggle template status');
+      }
+
+      const result = await response.json();
+      
+      // Update the template in the local state
+      setTemplates(prev => prev.map(t => 
+        t.id === templateId ? result.data : t
+      ));
+      setFilteredTemplates(prev => prev.map(t => 
+        t.id === templateId ? result.data : t
+      ));
+      
+      toast.success(result.message || "Template status updated successfully");
+    } catch (err) {
+      console.error("Error toggling template status:", err);
+      toast.error("Failed to toggle template status");
     }
   }
 
@@ -291,6 +353,20 @@ export default function TemplatesPage() {
                       Duplicate
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => handleToggleStatus(template.id)}>
+                      {template.is_active ? (
+                        <>
+                          <XCircle className="mr-2 h-4 w-4" />
+                          Deactivate
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="mr-2 h-4 w-4" />
+                          Activate
+                        </>
+                      )}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     <DeleteConfirmDialog
                       itemName="template"
                       onConfirm={() => handleDeleteTemplate(template.id)}
@@ -355,6 +431,18 @@ export default function TemplatesPage() {
                     <Eye className="mr-2 h-3 w-3" />
                     Preview
                   </Link>
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant={template.is_active ? "destructive" : "default"} 
+                  onClick={() => handleToggleStatus(template.id)}
+                  className="flex-shrink-0"
+                >
+                  {template.is_active ? (
+                    <XCircle className="h-3 w-3" />
+                  ) : (
+                    <CheckCircle className="h-3 w-3" />
+                  )}
                 </Button>
               </div>
             </CardContent>
