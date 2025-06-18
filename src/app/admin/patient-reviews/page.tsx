@@ -431,9 +431,9 @@ export default function PatientReviewsPage() {
                 {reviewToDelete.patient_name} from {reviewToDelete.patient_country}
               </div>
               <div className="text-sm text-gray-600 mt-1">
-                "{reviewToDelete.review_text.length > 100 
+                &quot;{reviewToDelete.review_text.length > 100 
                   ? reviewToDelete.review_text.substring(0, 100) + '...' 
-                  : reviewToDelete.review_text}"
+                  : reviewToDelete.review_text}&quot;
               </div>
             </div>
           )}

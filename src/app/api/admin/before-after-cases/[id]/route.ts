@@ -4,10 +4,11 @@ import { UpdateBeforeAfterCase } from '@/types/database'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const beforeAfterCase = await BeforeAfterCaseService.getById(params.id)
+    const resolvedParams = await params
+    const beforeAfterCase = await BeforeAfterCaseService.getById(resolvedParams.id)
     
     if (!beforeAfterCase) {
       return NextResponse.json(
@@ -28,9 +29,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params
     const body = await request.json()
     
     const updateData: UpdateBeforeAfterCase = {
@@ -50,7 +52,7 @@ export async function PUT(
       }
     })
 
-    const updatedCase = await BeforeAfterCaseService.update(params.id, updateData)
+    const updatedCase = await BeforeAfterCaseService.update(resolvedParams.id, updateData)
     
     return NextResponse.json(updatedCase)
   } catch (error) {
@@ -64,10 +66,11 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await BeforeAfterCaseService.delete(params.id)
+    const resolvedParams = await params
+    await BeforeAfterCaseService.delete(resolvedParams.id)
     
     return NextResponse.json({ message: 'Before-after case deleted successfully' })
   } catch (error) {
@@ -81,20 +84,21 @@ export async function DELETE(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params
     const body = await request.json()
     
     // Handle status updates
     if (body.status) {
-      const updatedCase = await BeforeAfterCaseService.updateStatus(params.id, body.status)
+      const updatedCase = await BeforeAfterCaseService.updateStatus(resolvedParams.id, body.status)
       return NextResponse.json(updatedCase)
     }
     
     // Handle other partial updates
     const updateData: UpdateBeforeAfterCase = body
-    const updatedCase = await BeforeAfterCaseService.update(params.id, updateData)
+    const updatedCase = await BeforeAfterCaseService.update(resolvedParams.id, updateData)
     
     return NextResponse.json(updatedCase)
   } catch (error) {

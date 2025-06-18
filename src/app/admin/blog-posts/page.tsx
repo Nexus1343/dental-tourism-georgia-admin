@@ -449,7 +449,7 @@ export default function BlogPostsPage() {
           <DialogHeader>
             <DialogTitle>Delete Blog Post</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{deleteDialog.blogPost?.title}"? 
+              Are you sure you want to delete &quot;{deleteDialog.blogPost?.title}&quot;? 
               This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
