@@ -13,7 +13,8 @@ import {
   HelpCircle,
   MessageSquare,
   BookOpen,
-  ImageIcon
+  ImageIcon,
+  ClipboardList
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -71,6 +72,12 @@ const navigation = [
     name: 'Patient Reviews',
     href: '/admin/patient-reviews',
     icon: MessageSquare,
+    badge: null
+  },
+  {
+    name: 'Submissions',
+    href: '/admin/questionnaire-submissions',
+    icon: ClipboardList,
     badge: null
   },
   {
