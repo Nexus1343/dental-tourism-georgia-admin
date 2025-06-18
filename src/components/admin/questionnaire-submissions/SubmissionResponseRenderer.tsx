@@ -392,7 +392,7 @@ export function SubmissionResponseRenderer({
             <MessageSquare className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
             <h3 className="font-medium mb-1">No Responses Found</h3>
             <p className="text-sm text-muted-foreground">
-              This submission doesn't contain any responses yet.
+              This submission doesn&apos;t contain any responses yet.
             </p>
           </div>
         </CardContent>

@@ -213,7 +213,7 @@ export default function SubmissionDetailPage({ params }: { params: Promise<{ id:
               <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">Submission Not Found</h3>
               <p className="text-muted-foreground mb-4">
-                The submission with ID "{submissionId}" could not be found.
+                The submission with ID &quot;{submissionId}&quot; could not be found.
               </p>
               <Button onClick={() => router.push('/admin/questionnaire-submissions')}>
                 Back to Submissions

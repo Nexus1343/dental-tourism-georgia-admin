@@ -130,7 +130,7 @@ export function SubmissionDataRenderer({ data, title = "Submission Data", classN
         <CardContent className="flex items-center justify-center py-8">
           <div className="text-center">
             <div className="text-muted-foreground mb-2">No submission data</div>
-            <div className="text-sm text-muted-foreground">This submission doesn't contain any data yet.</div>
+            <div className="text-sm text-muted-foreground">This submission doesn&apos;t contain any data yet.</div>
           </div>
         </CardContent>
       </Card>
