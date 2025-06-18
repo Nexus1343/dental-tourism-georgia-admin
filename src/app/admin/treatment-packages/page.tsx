@@ -36,7 +36,7 @@ import {
   Trash2,
   Filter,
   Package,
-  DollarSign,
+
   Calendar,
   MapPin,
   Car,

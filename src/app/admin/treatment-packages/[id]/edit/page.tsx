@@ -27,7 +27,7 @@ import {
   MapPin,
   Car,
   Plane,
-  Building2,
+
   Percent,
   Clock
 } from 'lucide-react'

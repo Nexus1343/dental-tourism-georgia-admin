@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Plus, Search, MoreHorizontal, Edit, Eye, Trash2, Star, BookOpen, ImageIcon, Calendar, User, FileText } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { Plus, Search, MoreHorizontal, Edit, Eye, Trash2, Star, BookOpen, ImageIcon, Calendar, User } from 'lucide-react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -75,7 +75,7 @@ export default function BlogPostsPage() {
     blogPost: null
   })
 
-  const fetchBlogPosts = async () => {
+  const fetchBlogPosts = useCallback(async () => {
     try {
       setLoading(true)
       const params = new URLSearchParams({
@@ -100,11 +100,11 @@ export default function BlogPostsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [page, search, statusFilter, languageFilter, featuredFilter])
 
   useEffect(() => {
     fetchBlogPosts()
-  }, [page, search, statusFilter, languageFilter, featuredFilter])
+  }, [fetchBlogPosts])
 
   const handleDeleteClick = (blogPost: BlogPost) => {
     setDeleteDialog({
@@ -163,10 +163,7 @@ export default function BlogPostsPage() {
     return languages[code] || code.toUpperCase()
   }
 
-  const truncateText = (text: string, maxLength: number = 100) => {
-    if (text.length <= maxLength) return text
-    return text.substring(0, maxLength) + '...'
-  }
+
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {

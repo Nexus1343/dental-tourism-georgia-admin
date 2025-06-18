@@ -16,7 +16,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Star, ArrowLeft, MessageSquare } from 'lucide-react'
-import { Treatment, PatientReview, UpdatePatientReview } from '@/types/database'
+import { Treatment, UpdatePatientReview } from '@/types/database'
 import { toast } from 'sonner'
 import Link from 'next/link'
 import { PatientPhotoUpload } from '@/components/PatientPhotoUpload'

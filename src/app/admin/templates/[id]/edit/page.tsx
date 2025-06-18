@@ -48,7 +48,7 @@ import {
   MessageSquare,
   User,
   Heart,
-  CreditCard,
+
   Camera,
   List,
   HelpCircle

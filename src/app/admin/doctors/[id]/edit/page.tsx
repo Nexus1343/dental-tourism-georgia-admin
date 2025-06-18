@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Save, X, Plus, Upload, Camera, User, FileText, ExternalLink } from 'lucide-react'
+import { ArrowLeft, Save, X, Plus, Upload, FileText, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'

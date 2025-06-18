@@ -19,7 +19,7 @@ import {
   Plane,
   Building2,
   Stethoscope,
-  Clock,
+
   CheckCircle,
   Gift
 } from 'lucide-react'

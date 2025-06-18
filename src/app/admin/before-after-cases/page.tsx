@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
@@ -63,7 +63,7 @@ export default function BeforeAfterCasesPage() {
     hasPrevPage: false
   })
 
-  const fetchCases = async () => {
+  const fetchCases = useCallback(async () => {
     setLoading(true)
     try {
       const params = new URLSearchParams()
@@ -88,7 +88,7 @@ export default function BeforeAfterCasesPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [filters])
 
   const handleDeleteCase = async (id: string, title: string) => {
     if (!confirm(`Are you sure you want to delete "${title}"? This action cannot be undone.`)) {
@@ -140,10 +140,7 @@ export default function BeforeAfterCasesPage() {
     setFilters(prev => ({ ...prev, ...newFilters, page: 1 }))
   }
 
-  const handleSort = (field: string) => {
-    const sortOrder = filters.sortBy === field && filters.sortOrder === 'asc' ? 'desc' : 'asc'
-    setFilters(prev => ({ ...prev, sortBy: field, sortOrder, page: 1 }))
-  }
+
 
   const getStatusBadge = (status: CaseDisplayStatus) => {
     const statusOption = STATUS_OPTIONS.find(opt => opt.value === status)
@@ -152,7 +149,7 @@ export default function BeforeAfterCasesPage() {
 
   useEffect(() => {
     fetchCases()
-  }, [filters])
+  }, [fetchCases])
 
   return (
     <div className="space-y-6">

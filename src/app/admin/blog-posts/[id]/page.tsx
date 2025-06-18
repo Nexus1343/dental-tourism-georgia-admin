@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import Link from 'next/link'
-import { BlogPost, UpdateBlogPost, BlogPostImage } from '@/types/database'
+import { BlogPost, UpdateBlogPost } from '@/types/database'
 import { RichTextEditor } from '@/components/ui/rich-text-editor'
 import { ImageUpload } from '@/components/ui/image-upload'
 

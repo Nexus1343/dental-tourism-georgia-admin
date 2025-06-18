@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
-import { Separator } from '@/components/ui/separator'
+
 import { Badge } from '@/components/ui/badge'
 import { 
   ArrowLeft, 
@@ -28,7 +28,7 @@ import {
   MapPin,
   Car,
   Plane,
-  Building2,
+
   Percent,
   Clock
 } from 'lucide-react'

@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Plus, Search, Filter, MoreHorizontal, Edit, Eye, Trash2 } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { Plus, Search, MoreHorizontal, Edit, Eye, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -90,7 +90,7 @@ export default function DoctorsPage() {
     hasPrevPage: false
   })
 
-  const fetchDoctors = async () => {
+  const fetchDoctors = useCallback(async () => {
     try {
       setLoading(true)
       const params = new URLSearchParams({
@@ -113,11 +113,11 @@ export default function DoctorsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [page, search, statusFilter])
 
   useEffect(() => {
     fetchDoctors()
-  }, [page, search, statusFilter])
+  }, [fetchDoctors])
 
   const handleDelete = async (doctorId: string) => {
     if (!confirm('Are you sure you want to delete this doctor?')) {

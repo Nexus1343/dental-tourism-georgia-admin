@@ -45,8 +45,7 @@ import {
   Users,
   Image,
   Settings,
-  HelpCircle,
-  AlertCircle
+  HelpCircle
 } from "lucide-react"
 import Link from "next/link"
 

@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -44,9 +45,7 @@ import {
   Trash2,
   Filter,
   Star,
-  MessageSquare,
-  CheckCircle,
-  XCircle
+  MessageSquare
 } from 'lucide-react'
 import { PatientReview, PatientReviewFilters } from '@/types/database'
 import { toast } from 'sonner'
@@ -77,7 +76,7 @@ export default function PatientReviewsPage() {
     totalPages: 0
   })
 
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
     setLoading(true)
     try {
       const params = new URLSearchParams()
@@ -102,7 +101,7 @@ export default function PatientReviewsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [filters])
 
   const handleDeleteClick = (review: PatientReview) => {
     setReviewToDelete(review)
@@ -140,34 +139,7 @@ export default function PatientReviewsPage() {
     setReviewToDelete(null)
   }
 
-  const toggleReviewStatus = async (id: string, field: 'is_active' | 'is_verified', value: boolean) => {
-    try {
-      const review = reviews.find(r => r.id === id)
-      if (!review) return
 
-      const response = await fetch(`/api/admin/patient-reviews/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...review,
-          [field]: value
-        }),
-      })
-
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || 'Failed to update review')
-      }
-
-      toast.success(`Review ${field === 'is_active' ? 'status' : 'verification'} updated`)
-      fetchReviews()
-    } catch (error) {
-      console.error('Error updating review:', error)
-      toast.error('Failed to update review')
-    }
-  }
 
   const updateFilters = (newFilters: Partial<PatientReviewFilters>) => {
     setFilters(prev => ({ ...prev, ...newFilters, page: 1 }))
@@ -191,7 +163,7 @@ export default function PatientReviewsPage() {
 
   useEffect(() => {
     fetchReviews()
-  }, [filters])
+  }, [fetchReviews])
 
   return (
     <div className="space-y-6">
@@ -310,9 +282,11 @@ export default function PatientReviewsPage() {
                     <TableCell>
                       <div className="flex items-center space-x-3">
                         {review.patient_photo_url ? (
-                          <img
+                          <Image
                             src={review.patient_photo_url}
                             alt={review.patient_name}
+                            width={40}
+                            height={40}
                             className="w-10 h-10 rounded-full object-cover border"
                           />
                         ) : (

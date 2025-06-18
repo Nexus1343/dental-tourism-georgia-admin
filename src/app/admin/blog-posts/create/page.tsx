@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Save, Eye, Plus, X } from 'lucide-react'
+import { ArrowLeft, Save, Plus, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
-import { CreateBlogPost, BlogPostImage } from '@/types/database'
+import { CreateBlogPost } from '@/types/database'
 import { RichTextEditor } from '@/components/ui/rich-text-editor'
 import { ImageUpload } from '@/components/ui/image-upload'
 

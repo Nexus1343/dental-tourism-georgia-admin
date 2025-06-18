@@ -36,9 +36,6 @@ import {
   Phone,
   Mail,
   Globe,
-  Users,
-  Calendar,
-  Settings,
   Eye,
   Edit,
   Trash2,
@@ -47,9 +44,7 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  TrendingUp,
   FileText,
-  Image,
   Loader2
 } from "lucide-react"
 import { toast } from "sonner"
@@ -63,7 +58,7 @@ interface ClinicQuestionnaireTemplateWithTemplate extends ClinicQuestionnaireTem
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Label } from "@/components/ui/label"
+
 import { Textarea } from "@/components/ui/textarea"
 import {
   Form,

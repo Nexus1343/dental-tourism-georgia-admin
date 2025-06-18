@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -16,13 +17,7 @@ export default function PatientReviewViewPage() {
   const [review, setReview] = useState<PatientReview | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    if (params.id) {
-      fetchReview()
-    }
-  }, [params.id])
-
-  const fetchReview = async () => {
+  const fetchReview = useCallback(async () => {
     setLoading(true)
     try {
       const response = await fetch(`/api/admin/patient-reviews/${params.id}`)
@@ -39,7 +34,13 @@ export default function PatientReviewViewPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [params.id])
+
+  useEffect(() => {
+    if (params.id) {
+      fetchReview()
+    }
+  }, [params.id, fetchReview])
 
   const renderStars = (rating: number) => {
     return (
@@ -192,10 +193,12 @@ export default function PatientReviewViewPage() {
                   
                   <div>
                     <h4 className="font-medium text-gray-900 mb-2">Patient Photo</h4>
-                    <img
+                    <Image
                       src={review.patient_photo_url}
                       alt={`Photo of ${review.patient_name}`}
-                      className="w-32 h-32 object-cover rounded-lg border"
+                      width={128}
+                      height={128}
+                      className="object-cover rounded-lg border"
                     />
                   </div>
                 </>
