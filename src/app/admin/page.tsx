@@ -1,12 +1,32 @@
+'use client'
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { StatusBadge } from "@/components/ui/status-badge"
-import { FileText, Building2, BarChart3, Plus, Eye } from "lucide-react"
+import { FileText, Building2, BarChart3, Plus, Eye, Shield } from "lucide-react"
 import Link from "next/link"
+import { useAuth } from "@/contexts/AuthContext"
 
 export default function Dashboard() {
-  return (
+  const { user } = useAuth()
+  
+      return (
     <div className="space-y-6">
+      {/* Welcome Message */}
+      <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
+        <div className="flex items-center gap-3">
+          <Shield className="h-6 w-6 text-primary" />
+          <div>
+            <h2 className="text-lg font-semibold text-primary">
+              Welcome, {user?.first_name && user?.last_name ? `${user.first_name} ${user.last_name}` : 'Super Administrator'}!
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              You are logged in as a Super Administrator with full system access.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">

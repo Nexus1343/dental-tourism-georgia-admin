@@ -10,6 +10,7 @@ import {
   DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu"
 import { Bell, Settings, User, LogOut, Menu } from "lucide-react"
+import { useAuth } from "@/contexts/AuthContext"
 
 interface HeaderProps {
   onMenuToggle?: () => void
@@ -17,6 +18,19 @@ interface HeaderProps {
 }
 
 export function Header({ onMenuToggle, showMobileMenu }: HeaderProps) {
+  const { user, signOut } = useAuth()
+
+  const getUserDisplayName = () => {
+    if (!user) return 'Admin User'
+    if (user.first_name && user.last_name) {
+      return `${user.first_name} ${user.last_name}`
+    }
+    return user.email.split('@')[0]
+  }
+
+  const handleSignOut = async () => {
+    await signOut()
+  }
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-16 items-center justify-between px-4">
@@ -72,9 +86,9 @@ export function Header({ onMenuToggle, showMobileMenu }: HeaderProps) {
             <DropdownMenuContent align="end" className="w-56">
               <div className="flex items-center justify-start gap-2 p-2">
                 <div className="flex flex-col space-y-1 leading-none">
-                  <p className="font-medium">Admin User</p>
+                  <p className="font-medium">{getUserDisplayName()}</p>
                   <p className="w-[200px] truncate text-sm text-muted-foreground">
-                    admin@dentaltourism.ge
+                    {user?.email}
                   </p>
                 </div>
               </div>
@@ -88,7 +102,10 @@ export function Header({ onMenuToggle, showMobileMenu }: HeaderProps) {
                 Settings
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-red-600">
+              <DropdownMenuItem 
+                className="text-red-600 cursor-pointer"
+                onClick={handleSignOut}
+              >
                 <LogOut className="mr-2 h-4 w-4" />
                 Sign out
               </DropdownMenuItem>
