@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, Search, Filter } from 'lucide-react'
+import { Plus, Search, Filter, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -94,11 +94,9 @@ export function UserManagementDashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
-          <p className="text-muted-foreground">
-            Manage users, roles, and permissions
-          </p>
+        <div className="flex items-center space-x-3">
+          <Users className="h-6 w-6 text-primary" />
+          <h1 className="text-2xl font-bold">Users</h1>
         </div>
         <Button onClick={() => setCreateDialogOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />

@@ -56,8 +56,32 @@ export async function GET(request: Request) {
       );
     }
 
+    // Fetch clinic assignments and submissions counts for each template
+    const templatesWithCounts = await Promise.all(
+      (templates || []).map(async (template) => {
+        // Get assigned clinics count
+        const { data: clinicAssignments } = await supabase
+          .from('clinic_questionnaire_templates')
+          .select('id')
+          .eq('template_id', template.id)
+          .eq('is_active', true);
+
+        // Get submissions count
+        const { data: submissions } = await supabase
+          .from('questionnaire_submissions')
+          .select('id')
+          .eq('template_id', template.id);
+
+        return {
+          ...template,
+          assigned_clinics_count: clinicAssignments?.length || 0,
+          submissions_count: submissions?.length || 0
+        };
+      })
+    );
+
     return NextResponse.json({
-      data: templates || [],
+      data: templatesWithCounts,
       count: count || 0,
       page,
       limit,

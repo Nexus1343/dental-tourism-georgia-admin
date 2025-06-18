@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, Search, MoreHorizontal, Edit, Eye, Trash2 } from 'lucide-react'
+import { Plus, Search, MoreHorizontal, Edit, Eye, Trash2, User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -194,16 +194,14 @@ export default function DoctorsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Doctors</h1>
-          <p className="text-muted-foreground">
-            Manage doctors and their profiles in the platform
-          </p>
+        <div className="flex items-center space-x-3">
+          <User className="h-6 w-6 text-primary" />
+          <h1 className="text-2xl font-bold">Doctors</h1>
         </div>
         <Link href="/admin/doctors/create">
           <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Doctor
+            <Plus className="h-4 w-4 mr-2" />
+            Create Doctor
           </Button>
         </Link>
       </div>

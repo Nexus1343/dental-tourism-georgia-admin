@@ -336,18 +336,6 @@ export default function TemplatesPage() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem asChild>
-                      <Link href={`/admin/templates/${template.id}`}>
-                        <Eye className="mr-2 h-4 w-4" />
-                        View Details
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href={`/admin/templates/${template.id}/edit`}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit Template
-                      </Link>
-                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleDuplicateTemplate(template.id)}>
                       <Copy className="mr-2 h-4 w-4" />
                       Duplicate
@@ -402,11 +390,11 @@ export default function TemplatesPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Building2 className="h-4 w-4 text-muted-foreground" />
-                  <span>3 clinics</span> {/* TODO: Get actual count */}
+                  <span>{template.assigned_clinics_count || 0} clinics</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-muted-foreground" />
-                  <span>45 submissions</span> {/* TODO: Get actual count */}
+                  <span>{template.submissions_count || 0} submissions</span>
                 </div>
               </div>
 
@@ -421,28 +409,10 @@ export default function TemplatesPage() {
               {/* Quick Actions */}
               <div className="flex gap-2">
                 <Button size="sm" variant="outline" className="flex-1" asChild>
-                  <Link href={`/admin/templates/${template.id}/edit`}>
-                    <Edit className="mr-2 h-3 w-3" />
-                    Edit
-                  </Link>
-                </Button>
-                <Button size="sm" variant="outline" className="flex-1" asChild>
-                  <Link href={`/admin/preview?template=${template.id}`}>
+                  <Link href={`/admin/templates/${template.id}`}>
                     <Eye className="mr-2 h-3 w-3" />
-                    Preview
+                    View
                   </Link>
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant={template.is_active ? "destructive" : "default"} 
-                  onClick={() => handleToggleStatus(template.id)}
-                  className="flex-shrink-0"
-                >
-                  {template.is_active ? (
-                    <XCircle className="h-3 w-3" />
-                  ) : (
-                    <CheckCircle className="h-3 w-3" />
-                  )}
                 </Button>
               </div>
             </CardContent>

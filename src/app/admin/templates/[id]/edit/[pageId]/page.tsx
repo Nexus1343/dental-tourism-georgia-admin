@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 
 import { Badge } from "@/components/ui/badge"
-import { Breadcrumbs } from "@/components/ui/breadcrumbs"
+
 
 import {
   DropdownMenu,
@@ -600,28 +600,25 @@ export default function QuestionEditorPage() {
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumbs */}
-      <Breadcrumbs 
-        items={[
-          { label: 'Templates', href: '/admin/templates', icon: FileText },
-          { label: template.name, href: `/admin/templates/${template.id}` },
-          { label: 'Edit', href: `/admin/templates/${template.id}/edit` },
-          { label: page.title }
-        ]}
-      />
-
-      {/* Page Header */}
-      <div className="flex items-start justify-between">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold tracking-tight">Edit Questions</h1>
-            <Badge variant="outline">Page {page.page_number}</Badge>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Link href={`/admin/templates/${template.id}/edit`}>
+            <Button variant="outline" size="sm">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Pages
+            </Button>
+          </Link>
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold tracking-tight">Edit Questions</h1>
+              <Badge variant="outline">Page {page.page_number}</Badge>
+            </div>
+            <p className="text-muted-foreground">
+              {page.title} • {questions.length} questions
+            </p>
           </div>
-          <p className="text-muted-foreground">
-            {page.title} • {questions.length} questions
-          </p>
         </div>
-
         <div className="flex items-center gap-2">
           <Button variant="outline" asChild>
             <Link href={`/admin/preview?template=${template.id}&page=${page.id}`}>
@@ -633,13 +630,6 @@ export default function QuestionEditorPage() {
           <Button onClick={handleSave} disabled={saving}>
             <Save className="mr-2 h-4 w-4" />
             {saving ? "Saving..." : "Save Questions"}
-          </Button>
-
-          <Button variant="outline" asChild>
-            <Link href={`/admin/templates/${template.id}/edit`}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Pages
-            </Link>
           </Button>
         </div>
       </div>

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { Breadcrumbs } from "@/components/ui/breadcrumbs"
+
 import { StatusBadge } from "@/components/ui/status-badge"
 import {
   Dialog,
@@ -234,37 +234,39 @@ function SortablePageItem({ page, onEdit, onDelete, onDuplicate }: {
             </div>
 
             {/* Actions */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onEdit(page)}>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit Page
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href={`/admin/templates/${page.template_id}/edit/${page.id}`}>
-                    <HelpCircle className="mr-2 h-4 w-4" />
-                    Edit Questions
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onDuplicate(page)}>
-                  <Copy className="mr-2 h-4 w-4" />
-                  Duplicate
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  className="text-red-600 focus:text-red-600"
-                  onClick={() => onDelete(page.id)}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => onEdit(page)}>
+                <Edit className="mr-2 h-3 w-3" />
+                Edit Page
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link href={`/admin/templates/${page.template_id}/edit/${page.id}`}>
+                  <HelpCircle className="mr-2 h-3 w-3" />
+                  Edit Questions
+                </Link>
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => onDuplicate(page)}>
+                    <Copy className="mr-2 h-4 w-4" />
+                    Duplicate
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    className="text-red-600 focus:text-red-600"
+                    onClick={() => onDelete(page.id)}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </div>
       </div>
@@ -586,31 +588,29 @@ export default function EditTemplatePage() {
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumbs */}
-      <Breadcrumbs 
-        items={[
-          { label: 'Templates', href: '/admin/templates', icon: FileText },
-          { label: template.name, href: `/admin/templates/${template.id}` },
-          { label: 'Edit' }
-        ]}
-      />
-
-      {/* Page Header */}
-      <div className="flex items-start justify-between">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold tracking-tight">Edit Template</h1>
-            <StatusBadge 
-              status={template.is_active ? 'active' : 'inactive'} 
-              showIcon={true}
-            />
-            <Badge variant="outline">v{template.version}</Badge>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Link href={`/admin/templates/${template.id}`}>
+            <Button variant="outline" size="sm">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Template
+            </Button>
+          </Link>
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold tracking-tight">Edit Pages</h1>
+              <StatusBadge 
+                status={template.is_active ? 'active' : 'inactive'} 
+                showIcon={true}
+              />
+              <Badge variant="outline">v{template.version}</Badge>
+            </div>
+            <p className="text-muted-foreground">
+              {template.name} • {pages.length} pages
+            </p>
           </div>
-          <p className="text-muted-foreground">
-            {template.name} • {pages.length} pages
-          </p>
         </div>
-
         <div className="flex items-center gap-2">
           <Button variant="outline" asChild>
             <Link href={`/admin/preview?template=${template.id}`}>
@@ -622,13 +622,6 @@ export default function EditTemplatePage() {
           <Button onClick={handleSaveTemplate} disabled={saving}>
             <Save className="mr-2 h-4 w-4" />
             {saving ? "Saving..." : "Save Changes"}
-          </Button>
-
-          <Button variant="outline" asChild>
-            <Link href={`/admin/templates/${template.id}`}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Template
-            </Link>
           </Button>
         </div>
       </div>

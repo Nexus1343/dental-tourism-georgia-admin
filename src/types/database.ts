@@ -37,6 +37,9 @@ export interface QuestionnaireTemplate {
   configuration: Record<string, any>
   introduction_text?: string
   completion_message?: string
+  // Computed fields for admin list view
+  assigned_clinics_count?: number
+  submissions_count?: number
 }
 
 export interface QuestionnairePage {

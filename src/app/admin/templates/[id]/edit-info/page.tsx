@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useState } from "react"
-import { useRouter } from "next/navigation"
+import React, { useState, useEffect } from "react"
+import { useRouter, useParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -28,7 +28,7 @@ import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { QuestionnaireTemplateService } from "@/lib/database"
+
 import { toast } from "sonner"
 
 // Validation schemas for each step
@@ -58,10 +58,12 @@ type ConfigData = z.infer<typeof configSchema>
 
 type TemplateFormData = BasicInfoData & MessagesData & ConfigData
 
-export default function CreateTemplatePage() {
+export default function EditTemplateInfoPage() {
   const router = useRouter()
+  const params = useParams()
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [formData, setFormData] = useState<Partial<TemplateFormData>>({
     allow_save_draft: true,
     show_progress: true,
@@ -76,14 +78,52 @@ export default function CreateTemplatePage() {
     { number: 3, title: "Configuration", icon: Settings }
   ]
 
+  // Load existing template data
+  useEffect(() => {
+    const loadTemplate = async () => {
+      try {
+        setLoading(true)
+        const response = await fetch(`/api/admin/templates/${params.id}`)
+        if (!response.ok) {
+          throw new Error('Failed to load template')
+        }
+        const result = await response.json()
+        const template = result.data // Extract the template from the data property
+        
+        console.log("Loaded template data:", template) // Debug log
+        
+        setFormData({
+          name: template.name,
+          description: template.description || "",
+          estimated_completion_minutes: template.estimated_completion_minutes,
+          language: template.language,
+          introduction_text: template.introduction_text || "",
+          completion_message: template.completion_message || "",
+          allow_save_draft: true,
+          show_progress: true,
+          allow_back_navigation: true,
+          require_completion: false,
+          auto_save_interval: 60
+        })
+      } catch (error) {
+        console.error("Error loading template:", error)
+        toast.error("Failed to load template")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadTemplate()
+  }, [params.id])
+
   // Step 1: Basic Information Form
   const basicInfoForm = useForm<BasicInfoData>({
     resolver: zodResolver(basicInfoSchema),
     defaultValues: {
-      name: formData.name || "",
-      description: formData.description || "",
-      estimated_completion_minutes: formData.estimated_completion_minutes || 10,
-      language: formData.language || "en"
+      name: "",
+      description: "",
+      estimated_completion_minutes: 10,
+      language: "en"
     }
   })
 
@@ -91,8 +131,8 @@ export default function CreateTemplatePage() {
   const messagesForm = useForm<MessagesData>({
     resolver: zodResolver(messagesSchema),
     defaultValues: {
-      introduction_text: formData.introduction_text || "",
-      completion_message: formData.completion_message || ""
+      introduction_text: "",
+      completion_message: ""
     }
   })
 
@@ -100,13 +140,38 @@ export default function CreateTemplatePage() {
   const configForm = useForm<ConfigData>({
     resolver: zodResolver(configSchema),
     defaultValues: {
-      allow_save_draft: formData.allow_save_draft || true,
-      show_progress: formData.show_progress || true,
-      allow_back_navigation: formData.allow_back_navigation || true,
-      require_completion: formData.require_completion || false,
-      auto_save_interval: formData.auto_save_interval || 60
+      allow_save_draft: true,
+      show_progress: true,
+      allow_back_navigation: true,
+      require_completion: false,
+      auto_save_interval: 60
     }
   })
+
+  // Update forms when data is loaded
+  useEffect(() => {
+    if (formData.name) {
+      basicInfoForm.reset({
+        name: formData.name || "",
+        description: formData.description || "",
+        estimated_completion_minutes: formData.estimated_completion_minutes || 10,
+        language: formData.language || "en"
+      })
+      
+      messagesForm.reset({
+        introduction_text: formData.introduction_text || "",
+        completion_message: formData.completion_message || ""
+      })
+      
+      configForm.reset({
+        allow_save_draft: formData.allow_save_draft || true,
+        show_progress: formData.show_progress || true,
+        allow_back_navigation: formData.allow_back_navigation || true,
+        require_completion: formData.require_completion || false,
+        auto_save_interval: formData.auto_save_interval || 60
+      })
+    }
+  }, [formData, basicInfoForm, messagesForm, configForm])
 
   const handleStepSubmit = async (stepData: any, nextStep?: number) => {
     setFormData(prev => ({ ...prev, ...stepData }))
@@ -120,56 +185,35 @@ export default function CreateTemplatePage() {
     try {
       const completeData = { ...formData, ...finalStepData }
       
-      // Create template using the service
-      const newTemplate = await QuestionnaireTemplateService.create({
-        name: completeData.name!,
-        description: completeData.description,
-        estimated_completion_minutes: completeData.estimated_completion_minutes!,
-        introduction_text: completeData.introduction_text,
-        completion_message: completeData.completion_message,
-        language: completeData.language!
+      // Update template using the API
+      const response = await fetch(`/api/admin/templates/${params.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: completeData.name!,
+          description: completeData.description,
+          estimated_completion_minutes: completeData.estimated_completion_minutes!,
+          introduction_text: completeData.introduction_text,
+          completion_message: completeData.completion_message,
+          language: completeData.language!
+        }),
       })
+
+      if (!response.ok) {
+        throw new Error('Failed to update template')
+      }
       
-      toast.success("Template created successfully!")
+      toast.success("Template updated successfully!")
       
-      // Redirect to template edit page to add pages and questions
-      router.push(`/admin/templates/${newTemplate.id}/edit`)
+      // Redirect back to template view page
+      router.push(`/admin/templates/${params.id}`)
     } catch (error) {
-      console.error("Error creating template:", error)
-      toast.error("Failed to create template. Please try again.")
+      console.error("Error updating template:", error)
+      toast.error("Failed to update template. Please try again.")
     } finally {
       setIsSubmitting(false)
-    }
-  }
-
-  const handleSaveDraft = async () => {
-    const currentFormData = getCurrentStepData()
-    const draftData = { ...formData, ...currentFormData }
-    
-    // Check if we have minimum required data
-    if (!draftData.name || !draftData.estimated_completion_minutes) {
-      toast.error("Please fill in at least the template name and estimated completion time to save as draft.")
-      return
-    }
-    
-    try {
-      const draftTemplate = await QuestionnaireTemplateService.create({
-        name: draftData.name,
-        description: draftData.description || "",
-        estimated_completion_minutes: draftData.estimated_completion_minutes,
-        introduction_text: draftData.introduction_text || "",
-        completion_message: draftData.completion_message || "",
-        language: draftData.language || "en"
-      })
-      
-      // Set as inactive (draft)
-      await QuestionnaireTemplateService.update(draftTemplate.id, { is_active: false })
-      
-      toast.success("Draft saved successfully!")
-      router.push(`/admin/templates/${draftTemplate.id}/edit`)
-    } catch (error) {
-      console.error("Error saving draft:", error)
-      toast.error("Failed to save draft. Please try again.")
     }
   }
 
@@ -186,28 +230,41 @@ export default function CreateTemplatePage() {
     }
   }
 
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/2 mb-8"></div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link href="/admin/templates">
+          <Link href={`/admin/templates/${params.id}`}>
             <Button variant="outline" size="sm">
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Templates
+              Back to Template
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Create New Template</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Edit Template</h1>
             <p className="text-muted-foreground">
-              Create a new questionnaire template for dental clinics
+              Update template information and settings
             </p>
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleSaveDraft}>
-            <Save className="mr-2 h-4 w-4" />
-            Save Draft
+          <Button
+            variant="outline"
+            onClick={() => router.push(`/admin/templates/${params.id}`)}
+          >
+            Cancel
           </Button>
         </div>
       </div>
@@ -262,9 +319,9 @@ export default function CreateTemplatePage() {
             Step {currentStep}: {steps[currentStep - 1].title}
           </CardTitle>
           <CardDescription>
-            {currentStep === 1 && "Enter the basic information for your questionnaire template"}
-            {currentStep === 2 && "Configure the introduction and completion messages"}
-            {currentStep === 3 && "Set up advanced configuration options"}
+            {currentStep === 1 && "Update the basic information for your questionnaire template"}
+            {currentStep === 2 && "Update the introduction and completion messages"}
+            {currentStep === 3 && "Update advanced configuration options"}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -372,16 +429,12 @@ export default function CreateTemplatePage() {
                   <p className="text-sm text-red-600">{messagesForm.formState.errors.completion_message.message}</p>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  This message will be shown after the patient completes all questions.
+                  This message will be shown after the patient completes the questionnaire.
                 </p>
               </div>
 
               <div className="flex justify-between">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setCurrentStep(1)}
-                >
+                <Button type="button" variant="outline" onClick={() => setCurrentStep(1)}>
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   Previous Step
                 </Button>
@@ -395,136 +448,104 @@ export default function CreateTemplatePage() {
 
           {/* Step 3: Configuration */}
           {currentStep === 3 && (
-            <form onSubmit={configForm.handleSubmit((data) => handleFinalSubmit(data as ConfigData))} className="space-y-6">
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Patient Experience</h3>
-                
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="flex items-center space-x-2">
+            <form onSubmit={configForm.handleSubmit(handleFinalSubmit)} className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="allow_save_draft">Allow Save Draft</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Patients can save their progress and continue later
+                      </p>
+                    </div>
                     <input
                       type="checkbox"
                       id="allow_save_draft"
+                      className="h-4 w-4"
                       {...configForm.register("allow_save_draft")}
-                      className="rounded"
                     />
-                    <div>
-                      <Label htmlFor="allow_save_draft" className="font-medium">Allow Save Draft</Label>
-                      <p className="text-xs text-muted-foreground">Patients can save and continue later</p>
-                    </div>
                   </div>
 
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="show_progress">Show Progress</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Display progress bar to patients
+                      </p>
+                    </div>
                     <input
                       type="checkbox"
                       id="show_progress"
+                      className="h-4 w-4"
                       {...configForm.register("show_progress")}
-                      className="rounded"
                     />
-                    <div>
-                      <Label htmlFor="show_progress" className="font-medium">Show Progress</Label>
-                      <p className="text-xs text-muted-foreground">Display progress bar</p>
-                    </div>
                   </div>
 
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="allow_back_navigation">Allow Back Navigation</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Patients can go back to previous pages
+                      </p>
+                    </div>
                     <input
                       type="checkbox"
                       id="allow_back_navigation"
+                      className="h-4 w-4"
                       {...configForm.register("allow_back_navigation")}
-                      className="rounded"
                     />
-                    <div>
-                      <Label htmlFor="allow_back_navigation" className="font-medium">Allow Back Navigation</Label>
-                      <p className="text-xs text-muted-foreground">Patients can go back to previous pages</p>
-                    </div>
                   </div>
+                </div>
 
-                  <div className="flex items-center space-x-2">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="require_completion">Require Completion</Label>
+                      <p className="text-xs text-muted-foreground">
+                        All questions must be answered to submit
+                      </p>
+                    </div>
                     <input
                       type="checkbox"
                       id="require_completion"
+                      className="h-4 w-4"
                       {...configForm.register("require_completion")}
-                      className="rounded"
                     />
-                    <div>
-                      <Label htmlFor="require_completion" className="font-medium">Require Completion</Label>
-                      <p className="text-xs text-muted-foreground">All questions must be answered</p>
-                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="auto_save_interval">Auto Save Interval (seconds)</Label>
+                    <Input
+                      id="auto_save_interval"
+                      type="number"
+                      min="30"
+                      max="600"
+                      {...configForm.register("auto_save_interval", { valueAsNumber: true })}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      How often to automatically save progress (30-600 seconds)
+                    </p>
+                    {configForm.formState.errors.auto_save_interval && (
+                      <p className="text-sm text-red-600">{configForm.formState.errors.auto_save_interval.message}</p>
+                    )}
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="auto_save_interval">Auto-save Interval (seconds)</Label>
-                <Input
-                  id="auto_save_interval"
-                  type="number"
-                  min="30"
-                  max="600"
-                  {...configForm.register("auto_save_interval", { valueAsNumber: true })}
-                />
-                <p className="text-xs text-muted-foreground">
-                  How often to automatically save patient progress (30-600 seconds)
-                </p>
-              </div>
-
               <div className="flex justify-between">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setCurrentStep(2)}
-                >
+                <Button type="button" variant="outline" onClick={() => setCurrentStep(2)}>
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   Previous Step
                 </Button>
-                <Button type="submit" disabled={isSubmitting || !configForm.formState.isValid}>
-                  {isSubmitting ? "Creating..." : "Create Template"}
-                  <Save className="ml-2 h-4 w-4" />
+                <Button type="submit" disabled={isSubmitting}>
+                  <Save className="mr-2 h-4 w-4" />
+                  {isSubmitting ? "Saving..." : "Save Changes"}
                 </Button>
               </div>
             </form>
           )}
         </CardContent>
       </Card>
-
-      {/* Summary Card */}
-      {currentStep > 1 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Template Summary</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-2">
-              {formData.name && (
-                <div>
-                  <Label className="text-sm font-medium">Name</Label>
-                  <p className="text-sm text-muted-foreground">{formData.name}</p>
-                </div>
-              )}
-              {formData.language && (
-                <div>
-                  <Label className="text-sm font-medium">Language</Label>
-                  <Badge variant="outline" className="ml-2">
-                    {formData.language?.toUpperCase()}
-                  </Badge>
-                </div>
-              )}
-              {formData.estimated_completion_minutes && (
-                <div>
-                  <Label className="text-sm font-medium">Estimated Time</Label>
-                  <p className="text-sm text-muted-foreground">{formData.estimated_completion_minutes} minutes</p>
-                </div>
-              )}
-              {formData.description && (
-                <div className="md:col-span-2">
-                  <Label className="text-sm font-medium">Description</Label>
-                  <p className="text-sm text-muted-foreground">{formData.description}</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   )
 } 

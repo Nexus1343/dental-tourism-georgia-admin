@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Breadcrumbs } from "@/components/ui/breadcrumbs"
+
 import { StatusBadge } from "@/components/ui/status-badge"
 import { DeleteConfirmDialog } from "@/components/ui/confirm-dialog"
 import {
@@ -256,30 +256,29 @@ export default function TemplateDetailPage() {
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumbs */}
-      <Breadcrumbs 
-        items={[
-          { label: 'Templates', href: '/templates', icon: FileText },
-          { label: template.name }
-        ]}
-      />
-
-      {/* Page Header */}
-      <div className="flex items-start justify-between">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold tracking-tight">{template.name}</h1>
-            <StatusBadge 
-              status={template.is_active ? 'active' : 'inactive'} 
-              showIcon={true}
-            />
-            <Badge variant="outline">v{template.version}</Badge>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Link href="/admin/templates">
+            <Button variant="outline" size="sm">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Templates
+            </Button>
+          </Link>
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold tracking-tight">{template.name}</h1>
+              <StatusBadge 
+                status={template.is_active ? 'active' : 'inactive'} 
+                showIcon={true}
+              />
+              <Badge variant="outline">v{template.version}</Badge>
+            </div>
+            <p className="text-muted-foreground max-w-2xl">
+              {template.description}
+            </p>
           </div>
-          <p className="text-muted-foreground max-w-2xl">
-            {template.description}
-          </p>
         </div>
-
         <div className="flex items-center gap-2">
           <Button variant="outline" asChild>
             <Link href={`/preview?template=${template.id}`}>
@@ -288,10 +287,17 @@ export default function TemplateDetailPage() {
             </Link>
           </Button>
           
-          <Button asChild>
-                            <Link href={`/admin/templates/${template.id}/edit`}>
+          <Button variant="outline" asChild>
+            <Link href={`/admin/templates/${template.id}/edit-info`}>
               <Edit className="mr-2 h-4 w-4" />
               Edit Template
+            </Link>
+          </Button>
+          
+          <Button asChild>
+            <Link href={`/admin/templates/${template.id}/edit`}>
+              <FileEdit className="mr-2 h-4 w-4" />
+              Edit Pages
             </Link>
           </Button>
 

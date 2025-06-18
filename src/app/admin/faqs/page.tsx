@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, Search, Filter, MoreHorizontal, Edit, Eye, Trash2, Star } from 'lucide-react'
+import { Plus, Search, Filter, MoreHorizontal, Edit, Eye, Trash2, Star, HelpCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -209,16 +209,14 @@ export default function FAQsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">FAQs</h1>
-          <p className="text-muted-foreground">
-            Manage frequently asked questions on the platform
-          </p>
+        <div className="flex items-center space-x-3">
+          <HelpCircle className="h-6 w-6 text-primary" />
+          <h1 className="text-2xl font-bold">FAQs</h1>
         </div>
         <Link href="/admin/faqs/create">
           <Button>
             <Plus className="h-4 w-4 mr-2" />
-            Add FAQ
+            Create FAQ
           </Button>
         </Link>
       </div>

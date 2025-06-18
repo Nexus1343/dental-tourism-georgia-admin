@@ -177,10 +177,16 @@ export default function BlogPostsPage() {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Blog Posts</h1>
-            <p className="text-muted-foreground">Manage your blog posts and content</p>
+          <div className="flex items-center space-x-3">
+            <BookOpen className="h-6 w-6 text-primary" />
+            <h1 className="text-2xl font-bold">Blog Posts</h1>
           </div>
+          <Link href="/admin/blog-posts/create">
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Create Post
+            </Button>
+          </Link>
         </div>
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
@@ -196,10 +202,16 @@ export default function BlogPostsPage() {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Blog Posts</h1>
-            <p className="text-muted-foreground">Manage your blog posts and content</p>
+          <div className="flex items-center space-x-3">
+            <BookOpen className="h-6 w-6 text-primary" />
+            <h1 className="text-2xl font-bold">Blog Posts</h1>
           </div>
+          <Link href="/admin/blog-posts/create">
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Create Post
+            </Button>
+          </Link>
         </div>
         <Card>
           <CardContent className="pt-6">
